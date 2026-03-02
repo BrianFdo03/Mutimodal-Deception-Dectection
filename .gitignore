@@ -1,0 +1,96 @@
+# Frontend
+
+# Logs
+frontend/logs
+frontend/*.log
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/pnpm-debug.log*
+frontend/lerna-debug.log*
+
+frontend/node_modules
+frontend/package-lock.json
+frontend/dist
+frontend/dist-ssr
+frontend/*.local
+
+# Editor directories and files
+frontend/.vscode/*
+frontend/!.vscode/extensions.json
+frontend/.idea
+frontend/.DS_Store
+frontend/*.suo
+frontend/*.ntvs*
+frontend/*.njsproj
+frontend/*.sln
+frontend/*.sw?
+
+
+# Backend
+
+# Virtual Environment
+backend/venv/
+backend/env/
+backend/.venv/
+
+# Python cache
+backend/__pycache__/
+backend/src/__pycache__/
+backend/*.py[cod]
+backend/*$py.class
+
+# Distribution / packaging
+backend/build/
+backend/dist/
+backend/*.egg-info/
+backend/.eggs/
+
+# Installer logs
+backend/pip-log.txt
+backend/pip-delete-this-directory.txt
+
+# Unit test / coverage
+backend/htmlcov/
+backend/.tox/
+backend/.nox/
+backend/.coverage
+backend/.coverage.*
+backend/.cache
+backend/pytest_cache/
+
+# Environment variables
+backend/.env
+backend/.env.*
+backend/*.env
+
+# SQLite database files
+backend/*.db
+backend/*.sqlite3
+
+# Logs
+backend/*.log
+
+# VS Code
+backend/.vscode/
+
+# PyCharm
+backend/.idea/
+
+# Mac
+backend/.DS_Store
+
+# Windows
+backend/Thumbs.db
+
+# Uvicorn reload files
+backend/*.reload
+
+# Mypy
+backend/.mypy_cache/
+
+# Ruff
+backend/.ruff_cache/
+
+# Pyre
+backend/.pyre/
