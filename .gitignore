@@ -98,5 +98,12 @@ backend/.ruff_cache/
 # Pyre
 backend/.pyre/
 *.npy
-backend/ml/video/model/final_video_bilstm_model.keras
-backend/ml/video/mediapipe_models/face_landmarker.task
+
+*.pyc
+
+backend/uploads/*
+backend/storage/inference_outputs/*
+
+# optional: avoid committing large model files
+backend/ml/video/model/*.keras
+backend/ml/video/mediapipe_models/*.task
