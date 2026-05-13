@@ -98,3 +98,5 @@ backend/.ruff_cache/
 # Pyre
 backend/.pyre/
 *.npy
+backend/ml/video/model/final_video_bilstm_model.keras
+backend/ml/video/mediapipe_models/face_landmarker.task
