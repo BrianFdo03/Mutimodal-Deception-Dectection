@@ -1,0 +1,50 @@
+{
+    "video_name": "trial_lie_020.mp4",
+    "overall_score": 0.9108,
+    "overall_risk": "high",
+    "metadata": {
+        "original_fps": 29.97002997002997,
+        "target_fps": 5,
+        "total_frames": 363,
+        "sampled_frames": 56,
+        "duration_seconds": 12.1121,
+        "frame_interval": 6,
+        "valid_landmark_frames": 56,
+        "missing_landmark_frames": 0,
+        "feature_dim": 1434
+    },
+    "timeline": [
+        {
+            "window_index": 0,
+            "start": 0.0,
+            "end": 5.0,
+            "raw_score": 0.9096,
+            "smoothed_score": 0.9096,
+            "risk": "high"
+        },
+        {
+            "window_index": 1,
+            "start": 2.0,
+            "end": 7.0,
+            "raw_score": 0.9171,
+            "smoothed_score": 0.9126,
+            "risk": "high"
+        },
+        {
+            "window_index": 2,
+            "start": 4.0,
+            "end": 9.0,
+            "raw_score": 0.9177,
+            "smoothed_score": 0.9146,
+            "risk": "high"
+        },
+        {
+            "window_index": 3,
+            "start": 6.0,
+            "end": 11.0,
+            "raw_score": 0.8938,
+            "smoothed_score": 0.9063,
+            "risk": "high"
+        }
+    ]
+}
