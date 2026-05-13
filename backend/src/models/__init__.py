@@ -6,3 +6,4 @@ from backend.src.models.sessionModel import Session
 from backend.src.models.stageModel import InterviewStage
 from backend.src.models.workExperienceModel import WorkExperience
 from backend.src.core.databaseCore import Base
+from backend.src.models.videoAnalysisModel import VideoAnalysis

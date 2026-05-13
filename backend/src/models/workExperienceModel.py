@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.orm import relationship
-from backend..core.databaseCore import Base
+from backend.src.core.databaseCore import Base
 
 class WorkExperience(Base):
     __tablename__ = "work_experiences"

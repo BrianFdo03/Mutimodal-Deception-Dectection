@@ -1,15 +1,13 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-# import src.models  # This triggers the __init__.py and loads all classes
-# from core.databaseCore import engine, Base
-# from backend..core.databaseCore import engine, Base
-# import src.routers.meetingRoute as meetings
+from backend.src.core.databaseCore import engine, Base
+import backend.src.models # This triggers the __init__.py and loads all classes
 
 from backend.src.routers.videoAnalysisRoute import router as video_analysis_router
 
 # Create tables in DB
-# Base.metadata.create_all(bind=engine)
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Multimodal Deception Detection API")
 

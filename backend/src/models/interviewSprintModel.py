@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, Date, DateTime
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
-from backend..core.databaseCore import Base
+from backend.src.core.databaseCore import Base
 
 class InterviewSprint(Base):
     __tablename__ = "interview_sprints"
@@ -24,6 +24,7 @@ class InterviewSprint(Base):
     # Relationships
     # This will link to the Stages we create next
     stages = relationship("InterviewStage", back_populates="sprint", cascade="all, delete-orphan")
+    sessions = relationship("Session", back_populates="sprint")
 
     # Metadata
     created_at = Column(DateTime(timezone=True), server_default=func.now())
