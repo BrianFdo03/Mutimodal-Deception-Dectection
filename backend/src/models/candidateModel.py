@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, DateTime, Date, ARRAY
 from sqlalchemy.sql import func
-from src.core.databaseCore import Base
+from backend.src.core.databaseCore import Base
 from sqlalchemy.orm import relationship
 
 class Candidate(Base):

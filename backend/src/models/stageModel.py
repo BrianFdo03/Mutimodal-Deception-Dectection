@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, Date, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
-from src.core.databaseCore import Base
+from backend..core.databaseCore import Base
 
 class InterviewStage(Base):
     __tablename__ = "stages"

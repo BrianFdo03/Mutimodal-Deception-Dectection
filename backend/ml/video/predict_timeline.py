@@ -3,9 +3,9 @@ import json
 
 import tensorflow as tf
 
-from ml.video.landmark_extraction import extract_landmark_sequence_from_video
-from ml.video.windowing import create_inference_windows, add_timestamp_columns
-from ml.video.smoothing import smooth_scores, assign_risk
+from backend.ml.video.landmark_extraction import extract_landmark_sequence_from_video
+from backend.ml.video.windowing import create_inference_windows, add_timestamp_columns
+from backend.ml.video.smoothing import smooth_scores, assign_risk
 
 
 CURRENT_FILE = Path(__file__).resolve()

@@ -6,8 +6,8 @@ import mediapipe as mp
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 
-from ml.video.frame_extraction import extract_sampled_frames
-from ml.video.preprocessing import normalize_landmarks
+from backend.ml.video.frame_extraction import extract_sampled_frames
+from backend.ml.video.preprocessing import normalize_landmarks
 
 
 CURRENT_FILE = Path(__file__).resolve()

@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, DateTime
 from sqlalchemy.sql import func
-from src.core.databaseCore import Base
+from backend..core.databaseCore import Base
 
 class Interviewer(Base):
     __tablename__ = "interviewers"

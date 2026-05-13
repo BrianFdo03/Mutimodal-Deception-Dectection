@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, Date, DateTime
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
-from src.core.databaseCore import Base
+from backend..core.databaseCore import Base
 
 class InterviewSprint(Base):
     __tablename__ = "interview_sprints"

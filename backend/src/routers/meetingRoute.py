@@ -2,8 +2,8 @@
 # import shutil
 # from fastapi import APIRouter, UploadFile, File, Depends, HTTPException
 # from sqlalchemy.orm import Session
-# from src.core.databaseCore import get_db
-# from src.models.meetingModel import Meeting
+# from backend..core.databaseCore import get_db
+# from backend..models.meetingModel import Meeting
 
 # router = APIRouter(prefix="/meetings", tags=["Meetings"])
 
