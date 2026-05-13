@@ -1,0 +1,15 @@
+{
+    "target_fps": 5,
+    "window_size": 25,
+    "stride": 10,
+    "feature_dim": 1434,
+    "label_mapping": {
+        "truthful": 0,
+        "deceptive": 1
+    },
+    "split": {
+        "train": 79,
+        "validation": 17,
+        "test": 17
+    }
+}
