@@ -16,6 +16,7 @@ import SessionsPage from "./pages/SessionsPage";
 import MeetingDemoPage from "./pages/MeetingDemoPage";
 import SettingsPage from "./pages/SettingsPage";
 import ConsentPage from "./pages/ConsentPage";
+import MeetingRoomPage from "./pages/MeetingRoomPage";
 
 const router = createBrowserRouter([
   {
@@ -65,6 +66,10 @@ const router = createBrowserRouter([
       {
         path: "consent/:sessionId",
         element: <ConsentPage />,
+      },
+      {
+        path: "meeting/:sessionId",
+        element: <MeetingRoomPage />,
       },
     ],
   },

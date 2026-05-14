@@ -231,6 +231,14 @@ export default function SessionsPage() {
                           </button>
                         )}
 
+                        <button
+                          onClick={() => navigate(`/meeting/${session.id}`)}
+                          className="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-100"
+                        >
+                          <MonitorPlay size={14} />
+                          Meeting
+                        </button>
+
                         {session.consentStatus === "Given" && (
                           <button
                             onClick={() => navigate(`/consent/${session.id}`)}

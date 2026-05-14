@@ -19,6 +19,9 @@ export default function TopBar() {
   if (location.pathname.startsWith("/consent")) {
     title = "Candidate Consent";
   }
+  if (location.pathname.startsWith("/meeting/")) {
+    title = "Online Interview Room";
+  }
 
   return (
     <header className="sticky top-0 z-30 border-b border-gray-200 bg-white/90 backdrop-blur">

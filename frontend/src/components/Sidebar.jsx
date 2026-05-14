@@ -42,11 +42,11 @@ const navItems = [
     path: "/sessions",
     icon: CalendarDays,
   },
-  {
-    label: "Meeting Room",
-    path: "/meeting-demo",
-    icon: MonitorPlay,
-  },
+  // {
+  //   label: "Meeting Room",
+  //   path: "/meeting-demo",
+  //   icon: MonitorPlay,
+  // },
   {
     label: "Settings",
     path: "/settings",
