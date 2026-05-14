@@ -5,18 +5,33 @@ import {
 } from "react-router-dom";
 
 import AppLayout from "./components/AppLayout";
+
+import LoginPage from "./pages/LoginPage";
+import DashboardPage from "./pages/DashboardPage";
 import VideoAnalysisDashboard from "./pages/VideoAnalysisDashboard";
 import SavedAnalysisPage from "./pages/SavedAnalysisPage";
 import AnalysisHistoryPage from "./pages/AnalysisHistoryPage";
+import CandidatesPage from "./pages/CandidatesPage";
+import SessionsPage from "./pages/SessionsPage";
+import MeetingDemoPage from "./pages/MeetingDemoPage";
+import SettingsPage from "./pages/SettingsPage";
 
 const router = createBrowserRouter([
+  {
+    path: "/login",
+    element: <LoginPage />,
+  },
   {
     path: "/",
     element: <AppLayout />,
     children: [
       {
         index: true,
-        element: <Navigate to="/analyze-video" replace />,
+        element: <Navigate to="/dashboard" replace />,
+      },
+      {
+        path: "dashboard",
+        element: <DashboardPage />,
       },
       {
         path: "analyze-video",
@@ -29,6 +44,22 @@ const router = createBrowserRouter([
       {
         path: "analysis-history",
         element: <AnalysisHistoryPage />,
+      },
+      {
+        path: "candidates",
+        element: <CandidatesPage />,
+      },
+      {
+        path: "sessions",
+        element: <SessionsPage />,
+      },
+      {
+        path: "meeting-demo",
+        element: <MeetingDemoPage />,
+      },
+      {
+        path: "settings",
+        element: <SettingsPage />,
       },
     ],
   },
