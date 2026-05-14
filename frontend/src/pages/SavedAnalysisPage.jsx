@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { getVideoAnalysisById } from "../services/videoAnalysisApi";
 
@@ -11,6 +11,7 @@ import FlaggedSegmentsTable from "../components/FlaggedSegmentsTable";
 export default function SavedAnalysisPage() {
   const [searchParams] = useSearchParams();
 
+  const navigate = useNavigate();
   const videoRef = useRef(null);
 
   const [analysisId, setAnalysisId] = useState("");
@@ -129,9 +130,18 @@ export default function SavedAnalysisPage() {
       {analysis && (
         <>
           <div className="mb-6 bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-            <h2 className="text-lg font-semibold text-gray-900">
-              Analysis Details
-            </h2>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <h2 className="text-lg font-semibold text-gray-900">
+                Analysis Details
+              </h2>
+
+              <button
+                onClick={() => navigate(`/report/${analysis.analysis_id}`)}
+                className="rounded-xl bg-gray-950 px-5 py-3 text-sm font-semibold text-white hover:bg-gray-800"
+              >
+                Generate Report
+              </button>
+            </div>
 
             <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
               <div>

@@ -22,6 +22,9 @@ export default function TopBar() {
   if (location.pathname.startsWith("/meeting/")) {
     title = "Online Interview Room";
   }
+  if (location.pathname.startsWith("/report/")) {
+    title = "Behavioral Integrity Report";
+  }
 
   return (
     <header className="sticky top-0 z-30 border-b border-gray-200 bg-white/90 backdrop-blur">
