@@ -27,6 +27,10 @@ export default function TopNavigation() {
           <NavLink to="/saved-analysis" className={getNavClass}>
             Saved Analysis
           </NavLink>
+
+          <NavLink to="/analysis-history" className={getNavClass}>
+            Analysis History
+          </NavLink>
         </nav>
       </div>
     </header>

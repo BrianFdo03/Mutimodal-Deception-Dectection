@@ -101,3 +101,15 @@ def get_video_analysis_by_id(db: Session, analysis_id: int):
     """
 
     return db.query(VideoAnalysis).filter(VideoAnalysis.id == analysis_id).first()
+
+
+def get_all_video_analyses(db: Session):
+    """
+    Gets all saved video analysis records, newest first.
+    """
+
+    return (
+        db.query(VideoAnalysis)
+        .order_by(VideoAnalysis.created_at.desc())
+        .all()
+    )

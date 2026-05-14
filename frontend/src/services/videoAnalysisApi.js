@@ -26,3 +26,11 @@ export async function getVideoAnalysisById(analysisId) {
 
   return response.data;
 }
+
+export async function getVideoAnalysisHistory() {
+  const response = await axios.get(
+    `${API_BASE_URL}/video-analysis/history/all`,
+  );
+
+  return response.data;
+}

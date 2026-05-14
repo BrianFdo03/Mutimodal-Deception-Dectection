@@ -7,7 +7,8 @@ from fastapi import Request
 from backend.src.core.databaseCore import get_db
 from backend.src.services.videoAnalysisService import (
     analyze_uploaded_video,
-    get_video_analysis_by_id
+    get_video_analysis_by_id,
+    get_all_video_analyses
 )
 
 
@@ -52,6 +53,63 @@ async def analyze_video(
             status_code=500,
             detail=f"Video analysis failed: {str(error)}"
         )
+    
+
+@router.get("/history/all")
+def get_video_analysis_history(
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    """
+    Retrieves all saved video analysis records.
+    """
+
+    analyses = get_all_video_analyses(db=db)
+
+    history = []
+
+    for analysis in analyses:
+        video_url = None
+        video_file_exists = False
+
+        if analysis.uploaded_file_path:
+            video_path = Path(analysis.uploaded_file_path)
+            video_file_exists = video_path.exists()
+
+            if video_file_exists:
+                filename = video_path.name
+                video_url = str(request.base_url) + f"uploads/{filename}"
+
+        timeline = analysis.timeline_json or []
+        high_risk_count = len([
+            item for item in timeline
+            if item.get("risk") == "high"
+        ])
+        medium_risk_count = len([
+            item for item in timeline
+            if item.get("risk") == "medium"
+        ])
+
+        history.append({
+            "analysis_id": analysis.id,
+            "session_id": analysis.session_id,
+            "video_name": analysis.video_name,
+            "uploaded_file_path": analysis.uploaded_file_path,
+            "video_url": video_url,
+            "video_file_exists": video_file_exists,
+            "overall_score": analysis.overall_score,
+            "overall_risk": analysis.overall_risk,
+            "segment_count": len(timeline),
+            "high_risk_count": high_risk_count,
+            "medium_risk_count": medium_risk_count,
+            "created_at": analysis.created_at
+        })
+
+    return {
+        "success": True,
+        "count": len(history),
+        "data": history
+    }
 
 
 @router.get("/{analysis_id}")

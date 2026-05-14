@@ -1,4 +1,5 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 
 import { getVideoAnalysisById } from "../services/videoAnalysisApi";
 
@@ -8,6 +9,8 @@ import InconsistencyTimeline from "../components/InconsistencyTimeline";
 import FlaggedSegmentsTable from "../components/FlaggedSegmentsTable";
 
 export default function SavedAnalysisPage() {
+  const [searchParams] = useSearchParams();
+
   const videoRef = useRef(null);
 
   const [analysisId, setAnalysisId] = useState("");
@@ -16,10 +19,21 @@ export default function SavedAnalysisPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
+  useEffect(() => {
+    const idFromUrl = searchParams.get("id");
+
+    if (idFromUrl) {
+      loadAnalysisById(idFromUrl);
+    }
+  }, [searchParams]);
+
   async function handleLoadAnalysis(event) {
     event.preventDefault();
+    await loadAnalysisById(analysisId.trim());
+  }
 
-    if (!analysisId.trim()) {
+  async function loadAnalysisById(id) {
+    if (!id) {
       setErrorMessage("Please enter an analysis ID.");
       return;
     }
@@ -30,7 +44,7 @@ export default function SavedAnalysisPage() {
       setAnalysis(null);
       setVideoUrl("");
 
-      const response = await getVideoAnalysisById(analysisId.trim());
+      const response = await getVideoAnalysisById(id);
 
       if (!response.success) {
         throw new Error("Could not load saved analysis.");
@@ -38,6 +52,7 @@ export default function SavedAnalysisPage() {
 
       setAnalysis(response.data);
       setVideoUrl(response.data.video_url || "");
+      setAnalysisId(String(id));
     } catch (error) {
       console.error(error);
       setErrorMessage(
@@ -122,7 +137,7 @@ export default function SavedAnalysisPage() {
               <div>
                 <p className="text-gray-500">Analysis ID</p>
                 <p className="font-semibold text-gray-900">
-                  {analysis.analysis_id + " " + videoUrl}
+                  {analysis.analysis_id}
                 </p>
               </div>
 
