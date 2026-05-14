@@ -37,6 +37,11 @@ export default function FlaggedSegmentsTable({ timeline, onSegmentClick }) {
         by the interviewer.
       </p>
 
+      <div className="mt-3 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-800">
+        Explanations are generated from facial landmark movement variation and
+        should be used as review support, not as proof of deception.
+      </div>
+
       <div className="mt-5 overflow-x-auto">
         <table className="min-w-full text-sm">
           <thead>
@@ -45,6 +50,7 @@ export default function FlaggedSegmentsTable({ timeline, onSegmentClick }) {
               <th className="py-3 pr-4">Raw Score</th>
               <th className="py-3 pr-4">Smoothed Score</th>
               <th className="py-3 pr-4">Risk</th>
+              <th className="py-3 pr-4">Explanation</th>
               <th className="py-3 pr-4">Action</th>
             </tr>
           </thead>
@@ -82,6 +88,11 @@ export default function FlaggedSegmentsTable({ timeline, onSegmentClick }) {
                     >
                       {segment.risk.toUpperCase()}
                     </span>
+                  </td>
+
+                  <td className="py-3 pr-4 max-w-md text-gray-600">
+                    {segment.explanation?.detail ||
+                      "No explanation available for this segment."}
                   </td>
 
                   <td className="py-3 pr-4">

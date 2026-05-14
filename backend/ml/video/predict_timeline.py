@@ -6,6 +6,7 @@ import tensorflow as tf
 from backend.ml.video.landmark_extraction import extract_landmark_sequence_from_video
 from backend.ml.video.windowing import create_inference_windows, add_timestamp_columns
 from backend.ml.video.smoothing import smooth_scores, assign_risk
+from backend.ml.video.explainability import generate_explanations_for_windows
 
 
 CURRENT_FILE = Path(__file__).resolve()
@@ -97,6 +98,13 @@ def predict_video_timeline(video_path):
     window_info["smoothed_score"] = smooth_scores(raw_scores, alpha=0.6)
     window_info["risk"] = window_info["smoothed_score"].apply(assign_risk)
 
+    explanations = generate_explanations_for_windows(
+        X_windows=X_infer,
+        risks=window_info["risk"].tolist()
+    )
+
+    window_info["explanation"] = explanations
+
     overall_score = float(window_info["smoothed_score"].mean())
     overall_risk = assign_risk(overall_score)
 
@@ -109,7 +117,8 @@ def predict_video_timeline(video_path):
             "end": round(float(row["end_time"]), 2),
             "raw_score": round(float(row["raw_score"]), 4),
             "smoothed_score": round(float(row["smoothed_score"]), 4),
-            "risk": row["risk"]
+            "risk": row["risk"],
+            "explanation": row["explanation"]
         })
 
     return {
