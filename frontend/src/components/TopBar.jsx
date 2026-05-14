@@ -14,8 +14,11 @@ const pageTitles = {
 export default function TopBar() {
   const location = useLocation();
 
-  const title =
-    pageTitles[location.pathname] || "Multimodal Deception Detection";
+  let title = pageTitles[location.pathname] || "Multimodal Deception Detection";
+
+  if (location.pathname.startsWith("/consent")) {
+    title = "Candidate Consent";
+  }
 
   return (
     <header className="sticky top-0 z-30 border-b border-gray-200 bg-white/90 backdrop-blur">

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   CalendarDays,
   CheckCircle2,
@@ -22,6 +23,8 @@ export default function SessionsPage() {
   const [candidates, setCandidates] = useState([]);
   const [searchText, setSearchText] = useState("");
   const [isFormOpen, setIsFormOpen] = useState(false);
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadPageData();
@@ -66,15 +69,6 @@ export default function SessionsPage() {
 
     const updatedSessions = deleteSession(sessionId);
     setSessions(updatedSessions);
-  }
-
-  function markConsentGiven(sessionId) {
-    updateSession(sessionId, {
-      consentStatus: "Given",
-      sessionStatus: "Ready",
-    });
-
-    loadPageData();
   }
 
   function markCompleted(sessionId) {
@@ -229,11 +223,21 @@ export default function SessionsPage() {
                       <div className="flex flex-wrap gap-2">
                         {session.consentStatus !== "Given" && (
                           <button
-                            onClick={() => markConsentGiven(session.id)}
+                            onClick={() => navigate(`/consent/${session.id}`)}
                             className="inline-flex items-center gap-1 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-xs font-semibold text-green-700 hover:bg-green-100"
                           >
                             <CheckCircle2 size={14} />
                             Consent
+                          </button>
+                        )}
+
+                        {session.consentStatus === "Given" && (
+                          <button
+                            onClick={() => navigate(`/consent/${session.id}`)}
+                            className="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-100"
+                          >
+                            <CheckCircle2 size={14} />
+                            View Consent
                           </button>
                         )}
 

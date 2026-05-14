@@ -15,6 +15,7 @@ import CandidatesPage from "./pages/CandidatesPage";
 import SessionsPage from "./pages/SessionsPage";
 import MeetingDemoPage from "./pages/MeetingDemoPage";
 import SettingsPage from "./pages/SettingsPage";
+import ConsentPage from "./pages/ConsentPage";
 
 const router = createBrowserRouter([
   {
@@ -60,6 +61,10 @@ const router = createBrowserRouter([
       {
         path: "settings",
         element: <SettingsPage />,
+      },
+      {
+        path: "consent/:sessionId",
+        element: <ConsentPage />,
       },
     ],
   },
