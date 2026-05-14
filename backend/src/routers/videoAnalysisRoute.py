@@ -78,8 +78,11 @@ def get_video_analysis(
     video_url = None
 
     if analysis.uploaded_file_path:
-        filename = Path(analysis.uploaded_file_path).name
-        video_url = str(request.base_url) + f"uploads/{filename}"
+        video_path = Path(analysis.uploaded_file_path)
+
+        if video_path.exists():
+            filename = video_path.name
+            video_url = str(request.base_url) + f"uploads/{filename}"
 
     return {
         "success": True,
