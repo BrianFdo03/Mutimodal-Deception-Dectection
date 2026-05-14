@@ -7,7 +7,11 @@ import {
   ShieldCheck,
 } from "lucide-react";
 
-import { getSessionById, updateSession } from "../services/localDataService";
+// import { getSessionById, updateSession } from "../services/localDataService";
+import {
+  getSessionById,
+  markSessionConsentGiven,
+} from "../services/sessionApi";
 
 export default function ConsentPage() {
   const { sessionId } = useParams();
@@ -20,17 +24,43 @@ export default function ConsentPage() {
   const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
-    const foundSession = getSessionById(sessionId);
-
-    if (!foundSession) {
-      setErrorMessage("Interview session was not found.");
-      return;
-    }
-
-    setSession(foundSession);
+    loadSession();
   }, [sessionId]);
 
-  function handleConsentSubmit(event) {
+  async function loadSession() {
+    try {
+      setErrorMessage("");
+
+      const response = await getSessionById(sessionId);
+
+      if (!response.success) {
+        throw new Error("Interview session was not found.");
+      }
+
+      setSession(response.data);
+    } catch (error) {
+      console.error(error);
+
+      setErrorMessage(
+        error?.response?.data?.detail ||
+          error.message ||
+          "Interview session was not found.",
+      );
+    }
+  }
+
+  // useEffect(() => {
+  //   const foundSession = getSessionById(sessionId);
+
+  //   if (!foundSession) {
+  //     setErrorMessage("Interview session was not found.");
+  //     return;
+  //   }
+
+  //   setSession(foundSession);
+  // }, [sessionId]);
+
+  async function handleConsentSubmit(event) {
     event.preventDefault();
 
     if (!hasReadNotice || !agreesToRecording || !agreesToAnalysis) {
@@ -40,14 +70,44 @@ export default function ConsentPage() {
       return;
     }
 
-    updateSession(sessionId, {
-      consentStatus: "Given",
-      sessionStatus: "Ready",
-      consentGivenAt: new Date().toISOString(),
-    });
+    try {
+      setErrorMessage("");
 
-    navigate("/sessions");
+      const response = await markSessionConsentGiven(sessionId);
+
+      if (!response.success) {
+        throw new Error("Could not record consent.");
+      }
+
+      navigate("/sessions");
+    } catch (error) {
+      console.error(error);
+
+      setErrorMessage(
+        error?.response?.data?.detail ||
+          error.message ||
+          "Something went wrong while recording consent.",
+      );
+    }
   }
+  // function handleConsentSubmit(event) {
+  //   event.preventDefault();
+
+  //   if (!hasReadNotice || !agreesToRecording || !agreesToAnalysis) {
+  //     setErrorMessage(
+  //       "Please confirm all consent statements before continuing.",
+  //     );
+  //     return;
+  //   }
+
+  //   updateSession(sessionId, {
+  //     consentStatus: "Given",
+  //     sessionStatus: "Ready",
+  //     consentGivenAt: new Date().toISOString(),
+  //   });
+
+  //   navigate("/sessions");
+  // }
 
   if (errorMessage && !session) {
     return (
@@ -69,7 +129,7 @@ export default function ConsentPage() {
     );
   }
 
-  const alreadyConsented = session.consentStatus === "Given";
+  const alreadyConsented = session.consent_status === "Given";
 
   return (
     <div className="max-w-5xl mx-auto px-6 py-8">
@@ -228,14 +288,14 @@ export default function ConsentPage() {
             </h2>
 
             <div className="mt-5 space-y-3 text-sm">
-              <InfoRow label="Session ID" value={`#${session.id}`} />
-              <InfoRow label="Candidate" value={session.candidateName} />
+              <InfoRow label="Session ID" value={`#${session.session_id}`} />
+              <InfoRow label="Candidate" value={session.candidate_name} />
               <InfoRow label="Stage" value={session.stage} />
-              <InfoRow label="Date" value={session.date} />
-              <InfoRow label="Time" value={session.time} />
-              <InfoRow label="Mode" value={session.meetingMode} />
-              <InfoRow label="Consent" value={session.consentStatus} />
-              <InfoRow label="Status" value={session.sessionStatus} />
+              <InfoRow label="Date" value={session.session_date} />
+              <InfoRow label="Time" value={session.session_time} />
+              <InfoRow label="Mode" value={session.meeting_mode} />
+              <InfoRow label="Consent" value={session.consent_status} />
+              <InfoRow label="Status" value={session.session_status} />
             </div>
           </div>
 

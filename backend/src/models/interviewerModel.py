@@ -28,4 +28,4 @@ class Interviewer(Base):
     # Metadata for tracking
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    sessions = relationship("Session", back_populates="interviewer")
+    # sessions = relationship("Session", back_populates="interviewer")

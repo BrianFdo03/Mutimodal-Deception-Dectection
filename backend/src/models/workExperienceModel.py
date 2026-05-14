@@ -9,7 +9,8 @@ class WorkExperience(Base):
     id = Column(Integer, primary_key=True, index=True, nullable=False)
     
     # candidate_id (foreign key, not null)
-    candidate_id = Column(Integer, ForeignKey("candidates.candidate_id"), nullable=False)
+    candidate_id = Column(Integer, nullable=False)
+    # candidate_id = Column(Integer, ForeignKey("candidates.candidate_id"), nullable=False)
     
     # company (not null)
     company = Column(String, nullable=False)
@@ -24,5 +25,5 @@ class WorkExperience(Base):
     # position (not null)
     position = Column(String, nullable=False)
 
-    # Relationship back to the Candidate object
-    candidate = relationship("Candidate", back_populates="work_experiences")
+    # # Relationship back to the Candidate object
+    # candidate = relationship("Candidate", back_populates="work_experiences")

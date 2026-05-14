@@ -10,19 +10,29 @@ import {
   X,
 } from "lucide-react";
 
+// import {
+//   deleteSession,
+//   getCandidates,
+//   getSessions,
+//   saveSession,
+//   updateSession,
+// } from "../services/localDataService";
+
+import { getCandidates } from "../services/candidateApi";
 import {
-  deleteSession,
-  getCandidates,
+  createSession,
+  deleteSessionById,
   getSessions,
-  saveSession,
   updateSession,
-} from "../services/localDataService";
+} from "../services/sessionApi";
 
 export default function SessionsPage() {
   const [sessions, setSessions] = useState([]);
   const [candidates, setCandidates] = useState([]);
   const [searchText, setSearchText] = useState("");
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const navigate = useNavigate();
 
@@ -30,21 +40,44 @@ export default function SessionsPage() {
     loadPageData();
   }, []);
 
-  function loadPageData() {
-    setSessions(getSessions());
-    setCandidates(getCandidates());
+  // function loadPageData() {
+  //   setSessions(getSessions());
+  //   setCandidates(getCandidates());
+  // }
+
+  async function loadPageData() {
+    try {
+      setIsLoading(true);
+      setErrorMessage("");
+
+      const [sessionsResponse, candidatesResponse] = await Promise.all([
+        getSessions(),
+        getCandidates(),
+      ]);
+
+      setSessions(sessionsResponse.data || []);
+      setCandidates(candidatesResponse || []);
+    } catch (error) {
+      console.error(error);
+      setErrorMessage(
+        error?.response?.data?.detail ||
+          "Something went wrong while loading sessions.",
+      );
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   const filteredSessions = useMemo(() => {
     return sessions.filter((session) => {
       const searchableText = [
-        session.candidateName,
+        session.candidate_name,
         session.stage,
-        session.date,
-        session.time,
-        session.consentStatus,
-        session.sessionStatus,
-        session.analysisStatus,
+        session.session_date,
+        session.session_time,
+        session.consent_status,
+        session.session_status,
+        session.analysis_status,
       ]
         .join(" ")
         .toLowerCase();
@@ -58,7 +91,7 @@ export default function SessionsPage() {
     setIsFormOpen(false);
   }
 
-  function handleDeleteSession(sessionId) {
+  async function handleDeleteSession(sessionId) {
     const confirmed = window.confirm(
       "Are you sure you want to delete this interview session?",
     );
@@ -67,18 +100,92 @@ export default function SessionsPage() {
       return;
     }
 
-    const updatedSessions = deleteSession(sessionId);
-    setSessions(updatedSessions);
+    try {
+      setErrorMessage("");
+
+      await deleteSessionById(sessionId);
+
+      setSessions((currentSessions) =>
+        currentSessions.filter(
+          (session) => String(session.session_id) !== String(sessionId),
+        ),
+      );
+    } catch (error) {
+      console.error(error);
+      setErrorMessage(
+        error?.response?.data?.detail ||
+          "Something went wrong while deleting the session.",
+      );
+    }
   }
 
-  function markCompleted(sessionId) {
-    updateSession(sessionId, {
-      sessionStatus: "Completed",
-      analysisStatus: "Ready for Analysis",
-    });
+  async function handleDeleteSession(sessionId) {
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this interview session?",
+    );
 
-    loadPageData();
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setErrorMessage("");
+
+      await deleteSessionById(sessionId);
+
+      setSessions((currentSessions) =>
+        currentSessions.filter(
+          (session) => String(session.session_id) !== String(sessionId),
+        ),
+      );
+    } catch (error) {
+      console.error(error);
+      setErrorMessage(
+        error?.response?.data?.detail ||
+          "Something went wrong while deleting the session.",
+      );
+    }
   }
+  // async function handleDeleteSession(sessionId) {
+  //   const confirmed = window.confirm(
+  //     "Are you sure you want to delete this interview session?",
+  //   );
+
+  //   if (!confirmed) {
+  //     return;
+  //   }
+
+  //   const updatedSessions = deleteSessionById(sessionId);
+  //   setSessions(updatedSessions);
+  // }
+
+  async function markCompleted(sessionId) {
+    try {
+      setErrorMessage("");
+
+      await updateSession(sessionId, {
+        session_status: "Completed",
+        analysis_status: "Ready for Analysis",
+      });
+
+      await loadPageData();
+    } catch (error) {
+      console.error(error);
+      setErrorMessage(
+        error?.response?.data?.detail ||
+          "Something went wrong while updating the session.",
+      );
+    }
+  }
+
+  // function markCompleted(sessionId) {
+  //   updateSession(sessionId, {
+  //     sessionStatus: "Completed",
+  //     analysisStatus: "Ready for Analysis",
+  //   });
+
+  //   loadPageData();
+  // }
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-8">
@@ -107,21 +214,21 @@ export default function SessionsPage() {
         <MiniStatusCard
           title="Consent Pending"
           value={
-            sessions.filter((session) => session.consentStatus === "Pending")
+            sessions.filter((session) => session.consent_status === "Pending")
               .length
           }
         />
         <MiniStatusCard
           title="Ready"
           value={
-            sessions.filter((session) => session.sessionStatus === "Ready")
+            sessions.filter((session) => session.session_status === "Ready")
               .length
           }
         />
         <MiniStatusCard
           title="Completed"
           value={
-            sessions.filter((session) => session.sessionStatus === "Completed")
+            sessions.filter((session) => session.session_status === "Completed")
               .length
           }
         />
@@ -140,6 +247,12 @@ export default function SessionsPage() {
         </div>
       </div>
 
+      {errorMessage && (
+        <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-red-700">
+          {errorMessage}
+        </div>
+      )}
+
       <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
         <div className="border-b border-gray-200 px-6 py-4">
           <h2 className="text-lg font-semibold text-gray-950">
@@ -151,7 +264,11 @@ export default function SessionsPage() {
           </p>
         </div>
 
-        {filteredSessions.length === 0 ? (
+        {isLoading ? (
+          <div className="p-10 text-center text-gray-500">
+            Loading interview sessions...
+          </div>
+        ) : filteredSessions.length === 0 ? (
           <div className="p-10 text-center text-gray-500">
             No sessions found. Schedule an interview session to begin.
           </div>
@@ -174,28 +291,28 @@ export default function SessionsPage() {
               <tbody>
                 {filteredSessions.map((session) => (
                   <tr
-                    key={session.id}
+                    key={session.session_id}
                     className="border-b border-gray-100 hover:bg-gray-50"
                   >
                     <td className="px-6 py-4 font-semibold text-gray-950">
-                      #{session.id}
+                      #{session.session_id}
                     </td>
 
                     <td className="px-6 py-4 text-gray-700">
-                      {session.candidateName}
+                      {session.candidate_name || "N/A"}
                     </td>
 
                     <td className="px-6 py-4 text-gray-700">{session.stage}</td>
 
                     <td className="px-6 py-4 text-gray-700">
-                      {session.date} · {session.time}
+                      {session.session_date} · {session.session_time}
                     </td>
 
                     <td className="px-6 py-4">
                       <StatusBadge
-                        label={session.consentStatus}
+                        label={session.consent_status}
                         type={
-                          session.consentStatus === "Given"
+                          session.consent_status === "Given"
                             ? "success"
                             : "warning"
                         }
@@ -204,11 +321,11 @@ export default function SessionsPage() {
 
                     <td className="px-6 py-4">
                       <StatusBadge
-                        label={session.sessionStatus}
+                        label={session.session_status}
                         type={
-                          session.sessionStatus === "Completed"
+                          session.session_status === "Completed"
                             ? "success"
-                            : session.sessionStatus === "Ready"
+                            : session.session_status === "Ready"
                               ? "info"
                               : "warning"
                         }
@@ -216,14 +333,26 @@ export default function SessionsPage() {
                     </td>
 
                     <td className="px-6 py-4 text-gray-700">
-                      {session.analysisStatus}
+                      {session.analysis_status}
                     </td>
 
                     <td className="px-6 py-4">
                       <div className="flex flex-wrap gap-2">
-                        {session.consentStatus !== "Given" && (
+                        <button
+                          onClick={() =>
+                            navigate(`/meeting/${session.session_id}`)
+                          }
+                          className="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-100"
+                        >
+                          <MonitorPlay size={14} />
+                          Meeting
+                        </button>
+
+                        {session.consent_status !== "Given" && (
                           <button
-                            onClick={() => navigate(`/consent/${session.id}`)}
+                            onClick={() =>
+                              navigate(`/consent/${session.session_id}`)
+                            }
                             className="inline-flex items-center gap-1 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-xs font-semibold text-green-700 hover:bg-green-100"
                           >
                             <CheckCircle2 size={14} />
@@ -231,17 +360,11 @@ export default function SessionsPage() {
                           </button>
                         )}
 
-                        <button
-                          onClick={() => navigate(`/meeting/${session.id}`)}
-                          className="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-100"
-                        >
-                          <MonitorPlay size={14} />
-                          Meeting
-                        </button>
-
-                        {session.consentStatus === "Given" && (
+                        {session.consent_status === "Given" && (
                           <button
-                            onClick={() => navigate(`/consent/${session.id}`)}
+                            onClick={() =>
+                              navigate(`/consent/${session.session_id}`)
+                            }
                             className="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-100"
                           >
                             <CheckCircle2 size={14} />
@@ -249,9 +372,9 @@ export default function SessionsPage() {
                           </button>
                         )}
 
-                        {session.sessionStatus !== "Completed" && (
+                        {session.session_status !== "Completed" && (
                           <button
-                            onClick={() => markCompleted(session.id)}
+                            onClick={() => markCompleted(session.session_id)}
                             className="inline-flex items-center gap-1 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-100"
                           >
                             <MonitorPlay size={14} />
@@ -260,7 +383,9 @@ export default function SessionsPage() {
                         )}
 
                         <button
-                          onClick={() => handleDeleteSession(session.id)}
+                          onClick={() =>
+                            handleDeleteSession(session.session_id)
+                          }
                           className="inline-flex items-center gap-1 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-100"
                         >
                           <Trash2 size={14} />
@@ -289,7 +414,7 @@ export default function SessionsPage() {
 
 function SessionFormModal({ candidates, onClose, onCreated }) {
   const [formData, setFormData] = useState({
-    candidateId: candidates[0]?.id || "",
+    candidateId: candidates[0]?.candidate_id || "",
     stage: "Technical Interview",
     date: "",
     time: "",
@@ -306,7 +431,7 @@ function SessionFormModal({ candidates, onClose, onCreated }) {
     }));
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
 
     if (!formData.candidateId) {
@@ -324,8 +449,26 @@ function SessionFormModal({ candidates, onClose, onCreated }) {
       return;
     }
 
-    saveSession(formData);
-    onCreated();
+    try {
+      setErrorMessage("");
+
+      await createSession({
+        candidate_id: Number(formData.candidateId),
+        stage: formData.stage,
+        session_date: formData.date,
+        session_time: formData.time,
+        meeting_mode: formData.meetingMode,
+        notes: formData.notes,
+      });
+
+      onCreated();
+    } catch (error) {
+      console.error(error);
+      setErrorMessage(
+        error?.response?.data?.detail ||
+          "Something went wrong while scheduling the session.",
+      );
+    }
   }
 
   return (
@@ -379,7 +522,10 @@ function SessionFormModal({ candidates, onClose, onCreated }) {
                   className="mt-2 w-full rounded-xl border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-gray-950"
                 >
                   {candidates.map((candidate) => (
-                    <option key={candidate.id} value={candidate.id}>
+                    <option
+                      key={candidate.candidate_id}
+                      value={candidate.candidate_id}
+                    >
                       {candidate.name} — {candidate.position}
                     </option>
                   ))}

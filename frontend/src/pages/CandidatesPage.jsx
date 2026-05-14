@@ -1,23 +1,45 @@
 import { useEffect, useMemo, useState } from "react";
 import { Plus, Search, Trash2, UserRound, X } from "lucide-react";
 
+// import {
+//   deleteCandidate,
+//   getCandidates,
+//   saveCandidate,
+// } from "../services/localDataService";
+
 import {
-  deleteCandidate,
+  createCandidate,
+  deleteCandidateById,
   getCandidates,
-  saveCandidate,
-} from "../services/localDataService";
+} from "../services/candidateApi";
 
 export default function CandidatesPage() {
   const [candidates, setCandidates] = useState([]);
   const [searchText, setSearchText] = useState("");
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
     loadCandidates();
   }, []);
 
-  function loadCandidates() {
-    setCandidates(getCandidates());
+  async function loadCandidates() {
+    try {
+      setIsLoading(true);
+      setErrorMessage("");
+
+      const response = await getCandidates();
+      setCandidates(response || []);
+    } catch (error) {
+      console.error(error);
+      setErrorMessage(
+        error?.response?.data?.detail ||
+          "Something went wrong while loading candidates.",
+      );
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   const filteredCandidates = useMemo(() => {
@@ -27,7 +49,7 @@ export default function CandidatesPage() {
         candidate.email,
         candidate.phone,
         candidate.position,
-        candidate.experienceLevel,
+        candidate.experience_level,
         candidate.status,
       ]
         .join(" ")
@@ -42,7 +64,7 @@ export default function CandidatesPage() {
     setIsFormOpen(false);
   }
 
-  function handleDeleteCandidate(candidateId) {
+  async function handleDeleteCandidate(candidateId) {
     const confirmed = window.confirm(
       "Are you sure you want to delete this candidate?",
     );
@@ -51,9 +73,36 @@ export default function CandidatesPage() {
       return;
     }
 
-    const updatedCandidates = deleteCandidate(candidateId);
-    setCandidates(updatedCandidates);
+    try {
+      setErrorMessage("");
+
+      await deleteCandidateById(candidateId);
+
+      setCandidates((currentCandidates) =>
+        currentCandidates.filter(
+          (candidate) => String(candidate.candidate_id) !== String(candidateId),
+        ),
+      );
+    } catch (error) {
+      console.error(error);
+      setErrorMessage(
+        error?.response?.data?.detail ||
+          "Something went wrong while deleting the candidate.",
+      );
+    }
   }
+  // function handleDeleteCandidate(candidateId) {
+  //   const confirmed = window.confirm(
+  //     "Are you sure you want to delete this candidate?",
+  //   );
+
+  //   if (!confirmed) {
+  //     return;
+  //   }
+
+  //   const updatedCandidates = deleteCandidate(candidateId);
+  //   setCandidates(updatedCandidates);
+  // }
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-8">
@@ -114,6 +163,12 @@ export default function CandidatesPage() {
         </div>
       </div>
 
+      {errorMessage && (
+        <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-red-700">
+          {errorMessage}
+        </div>
+      )}
+
       <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
         <div className="border-b border-gray-200 px-6 py-4">
           <h2 className="text-lg font-semibold text-gray-950">
@@ -125,7 +180,11 @@ export default function CandidatesPage() {
           </p>
         </div>
 
-        {filteredCandidates.length === 0 ? (
+        {isLoading ? (
+          <div className="p-10 text-center text-gray-500">
+            Loading candidates...
+          </div>
+        ) : filteredCandidates.length === 0 ? (
           <div className="p-10 text-center text-gray-500">
             No candidates found. Add a candidate to begin scheduling interviews.
           </div>
@@ -147,7 +206,7 @@ export default function CandidatesPage() {
               <tbody>
                 {filteredCandidates.map((candidate) => (
                   <tr
-                    key={candidate.id}
+                    key={candidate.candidate_id}
                     className="border-b border-gray-100 hover:bg-gray-50"
                   >
                     <td className="px-6 py-4">
@@ -173,7 +232,7 @@ export default function CandidatesPage() {
                     </td>
 
                     <td className="px-6 py-4 text-gray-700">
-                      {candidate.experienceLevel}
+                      {candidate.experience_level || "N/A"}
                     </td>
 
                     <td className="px-6 py-4">
@@ -183,14 +242,16 @@ export default function CandidatesPage() {
                     </td>
 
                     <td className="px-6 py-4 text-gray-700">
-                      {candidate.createdAt
-                        ? new Date(candidate.createdAt).toLocaleDateString()
+                      {candidate.created_at
+                        ? new Date(candidate.created_at).toLocaleDateString()
                         : "N/A"}
                     </td>
 
                     <td className="px-6 py-4">
                       <button
-                        onClick={() => handleDeleteCandidate(candidate.id)}
+                        onClick={() =>
+                          handleDeleteCandidate(candidate.candidate_id)
+                        }
                         className="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-100"
                       >
                         <Trash2 size={14} />
@@ -244,7 +305,7 @@ function CandidateFormModal({ onClose, onCreated }) {
     }));
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
 
     if (!formData.name.trim()) {
@@ -262,8 +323,27 @@ function CandidateFormModal({ onClose, onCreated }) {
       return;
     }
 
-    saveCandidate(formData);
-    onCreated();
+    try {
+      setErrorMessage("");
+
+      await createCandidate({
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        position: formData.position,
+        experience_level: formData.experienceLevel,
+        status: formData.status,
+        notes: formData.notes,
+      });
+
+      onCreated();
+    } catch (error) {
+      console.error(error);
+      setErrorMessage(
+        error?.response?.data?.detail ||
+          "Something went wrong while saving the candidate.",
+      );
+    }
   }
 
   return (
