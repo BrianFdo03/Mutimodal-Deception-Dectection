@@ -1,7 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { getVideoAnalysisHistory } from "../services/videoAnalysisApi";
+import {
+  deleteVideoAnalysisById,
+  getVideoAnalysisHistory,
+} from "../services/videoAnalysisApi";
+
+import { unlinkAnalysisFromSessions } from "../services/localDataService";
 
 function getRiskBadgeClass(risk) {
   if (risk === "high") {
@@ -67,6 +72,40 @@ export default function AnalysisHistoryPage() {
 
   function openAnalysis(analysisId) {
     navigate(`/saved-analysis?id=${analysisId}`);
+  }
+
+  async function handleDeleteAnalysis(analysisId) {
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this analysis and its uploaded video file? This action cannot be undone.",
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setErrorMessage("");
+
+      const response = await deleteVideoAnalysisById(analysisId);
+
+      if (!response.success) {
+        throw new Error("Could not delete analysis.");
+      }
+
+      setAnalyses((currentAnalyses) =>
+        currentAnalyses.filter(
+          (item) => String(item.analysis_id) !== String(analysisId),
+        ),
+      );
+      unlinkAnalysisFromSessions(analysisId);
+    } catch (error) {
+      console.error(error);
+      setErrorMessage(
+        error?.response?.data?.detail ||
+          error.message ||
+          "Something went wrong while deleting the analysis.",
+      );
+    }
   }
 
   return (
@@ -241,6 +280,13 @@ export default function AnalysisHistoryPage() {
                           className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50"
                         >
                           Report
+                        </button>
+
+                        <button
+                          onClick={() => handleDeleteAnalysis(item.analysis_id)}
+                          className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-100"
+                        >
+                          Delete
                         </button>
                       </div>
                     </td>

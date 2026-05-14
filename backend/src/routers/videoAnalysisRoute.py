@@ -8,7 +8,8 @@ from backend.src.core.databaseCore import get_db
 from backend.src.services.videoAnalysisService import (
     analyze_uploaded_video,
     get_video_analysis_by_id,
-    get_all_video_analyses
+    get_all_video_analyses,
+    delete_video_analysis_by_id,
 )
 
 
@@ -155,5 +156,36 @@ def get_video_analysis(
             "metadata": analysis.metadata_json,
             "timeline": analysis.timeline_json,
             "created_at": analysis.created_at
+        }
+    }
+
+
+@router.delete("/{analysis_id}")
+def delete_video_analysis(
+    analysis_id: int,
+    db: Session = Depends(get_db)
+):
+    """
+    Deletes a saved video analysis result and its uploaded video file.
+    """
+
+    analysis, deleted_file_path, file_deleted = delete_video_analysis_by_id(
+        db=db,
+        analysis_id=analysis_id
+    )
+
+    if analysis is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Video analysis result not found."
+        )
+
+    return {
+        "success": True,
+        "message": "Video analysis deleted successfully.",
+        "data": {
+            "analysis_id": analysis_id,
+            "deleted_file_path": deleted_file_path,
+            "file_deleted": file_deleted
         }
     }

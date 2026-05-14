@@ -113,3 +113,35 @@ def get_all_video_analyses(db: Session):
         .order_by(VideoAnalysis.created_at.desc())
         .all()
     )
+
+def delete_video_analysis_by_id(db: Session, analysis_id: int):
+    """
+    Deletes a saved video analysis record and its uploaded video file.
+
+    Returns:
+        tuple: (deleted_analysis, deleted_file_path, file_deleted)
+    """
+
+    analysis = get_video_analysis_by_id(
+        db=db,
+        analysis_id=analysis_id
+    )
+
+    if analysis is None:
+        return None, None, False
+
+    deleted_file_path = None
+    file_deleted = False
+
+    if analysis.uploaded_file_path:
+        video_path = Path(analysis.uploaded_file_path)
+        deleted_file_path = str(video_path)
+
+        if video_path.exists() and video_path.is_file():
+            video_path.unlink()
+            file_deleted = True
+
+    db.delete(analysis)
+    db.commit()
+
+    return analysis, deleted_file_path, file_deleted

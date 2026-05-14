@@ -34,3 +34,11 @@ export async function getVideoAnalysisHistory() {
 
   return response.data;
 }
+
+export async function deleteVideoAnalysisById(analysisId) {
+  const response = await axios.delete(
+    `${API_BASE_URL}/video-analysis/${analysisId}`,
+  );
+
+  return response.data;
+}

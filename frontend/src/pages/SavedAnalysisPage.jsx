@@ -1,7 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
-import { getVideoAnalysisById } from "../services/videoAnalysisApi";
+import {
+  deleteVideoAnalysisById,
+  getVideoAnalysisById,
+} from "../services/videoAnalysisApi";
+
+import { unlinkAnalysisFromSessions } from "../services/localDataService";
 
 import AnalysisSummaryCards from "../components/AnalysisSummaryCards";
 import VideoPreviewPlayer from "../components/VideoPreviewPlayer";
@@ -75,6 +80,48 @@ export default function SavedAnalysisPage() {
     videoRef.current.play();
   }
 
+  async function handleDeleteAnalysis() {
+    if (!analysis?.analysis_id) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this analysis and its uploaded video file? This action cannot be undone.",
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      setErrorMessage("");
+
+      const response = await deleteVideoAnalysisById(analysis.analysis_id);
+
+      if (!response.success) {
+        throw new Error("Could not delete analysis.");
+      }
+
+      setAnalysis(null);
+      setVideoUrl("");
+      setAnalysisId("");
+
+      alert("Analysis and video file deleted successfully.");
+      unlinkAnalysisFromSessions(analysis.analysis_id);
+      navigate("/analysis-history");
+    } catch (error) {
+      console.error(error);
+      setErrorMessage(
+        error?.response?.data?.detail ||
+          error.message ||
+          "Something went wrong while deleting the analysis.",
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
   return (
     <div className="max-w-7xl mx-auto px-6 py-8">
       <div className="mb-8">
@@ -135,12 +182,21 @@ export default function SavedAnalysisPage() {
                 Analysis Details
               </h2>
 
-              <button
-                onClick={() => navigate(`/report/${analysis.analysis_id}`)}
-                className="rounded-xl bg-gray-950 px-5 py-3 text-sm font-semibold text-white hover:bg-gray-800"
-              >
-                Generate Report
-              </button>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => navigate(`/report/${analysis.analysis_id}`)}
+                  className="rounded-xl bg-gray-950 px-5 py-3 text-sm font-semibold text-white hover:bg-gray-800"
+                >
+                  Generate Report
+                </button>
+
+                <button
+                  onClick={handleDeleteAnalysis}
+                  className="rounded-xl border border-red-200 bg-red-50 px-5 py-3 text-sm font-semibold text-red-700 hover:bg-red-100"
+                >
+                  Delete Analysis
+                </button>
+              </div>
             </div>
 
             <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
@@ -167,6 +223,17 @@ export default function SavedAnalysisPage() {
                 </p>
               </div>
             </div>
+          </div>
+
+          <div className="mt-6 mb-6 rounded-2xl border border-yellow-100 bg-yellow-50 p-5 text-sm text-yellow-800">
+            <p className="font-semibold text-yellow-950">
+              Privacy and retention notice
+            </p>
+            <p className="mt-2 leading-6">
+              Interview recordings and analysis outputs should only be retained
+              for the required review period. Use Delete Analysis to remove the
+              saved result and uploaded video file when it is no longer needed.
+            </p>
           </div>
 
           <AnalysisSummaryCards analysis={analysis} />

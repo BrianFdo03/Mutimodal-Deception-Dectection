@@ -138,3 +138,26 @@ export function deleteSession(sessionId) {
 
   return updatedSessions;
 }
+
+/* -------------------- Unlinks -------------------- */
+
+export function unlinkAnalysisFromSessions(analysisId) {
+  const sessions = getSessions();
+
+  const updatedSessions = sessions.map((session) => {
+    if (String(session.linkedAnalysisId) !== String(analysisId)) {
+      return session;
+    }
+
+    return {
+      ...session,
+      linkedAnalysisId: null,
+      analysisStatus: "Deleted",
+      updatedAt: new Date().toISOString(),
+    };
+  });
+
+  writeToStorage(SESSIONS_KEY, updatedSessions);
+
+  return updatedSessions;
+}
