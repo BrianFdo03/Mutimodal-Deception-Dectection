@@ -226,12 +226,23 @@ export default function AnalysisHistoryPage() {
                     </td>
 
                     <td className="py-4 px-6">
-                      <button
-                        onClick={() => openAnalysis(item.analysis_id)}
-                        className="rounded-lg bg-gray-900 text-white px-3 py-2 text-xs font-semibold hover:bg-gray-800"
-                      >
-                        Open
-                      </button>
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          onClick={() => openAnalysis(item.analysis_id)}
+                          className="rounded-lg bg-gray-900 text-white px-4 py-2 text-xs font-semibold hover:bg-gray-800"
+                        >
+                          Open
+                        </button>
+
+                        <button
+                          onClick={() =>
+                            navigate(`/report/${item.analysis_id}`)
+                          }
+                          className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                        >
+                          Report
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

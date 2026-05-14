@@ -69,7 +69,7 @@ export default function Sidebar() {
         </div>
 
         <div>
-          <h1 className="text-base font-bold text-gray-950">VeriView</h1>
+          <h1 className="text-base font-bold text-gray-950">RecruitAI</h1>
           <p className="text-xs text-gray-500">Interview Integrity Assistant</p>
         </div>
       </div>

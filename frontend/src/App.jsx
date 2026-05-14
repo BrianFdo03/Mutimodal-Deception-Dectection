@@ -17,6 +17,7 @@ import MeetingDemoPage from "./pages/MeetingDemoPage";
 import SettingsPage from "./pages/SettingsPage";
 import ConsentPage from "./pages/ConsentPage";
 import MeetingRoomPage from "./pages/MeetingRoomPage";
+import ReportPreviewPage from "./pages/ReportPreviewPage";
 
 const router = createBrowserRouter([
   {
@@ -70,6 +71,10 @@ const router = createBrowserRouter([
       {
         path: "meeting/:sessionId",
         element: <MeetingRoomPage />,
+      },
+      {
+        path: "report/:analysisId",
+        element: <ReportPreviewPage />,
       },
     ],
   },
