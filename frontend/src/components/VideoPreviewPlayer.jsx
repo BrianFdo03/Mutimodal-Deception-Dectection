@@ -20,8 +20,7 @@ const VideoPreviewPlayer = forwardRef(function VideoPreviewPlayer(
           />
         ) : (
           <div className="h-64 flex items-center justify-center text-gray-400">
-            Video file is not available. The timeline result can still be
-            reviewed.
+            Video file is not available
           </div>
         )}
       </div>
