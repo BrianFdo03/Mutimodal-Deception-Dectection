@@ -37,3 +37,30 @@ export async function deleteSessionById(sessionId) {
   const response = await axios.delete(`${API_BASE_URL}/sessions/${sessionId}`);
   return response.data;
 }
+
+export async function getCandidateSessionAccess(sessionId, token) {
+  const response = await axios.get(
+    `${API_BASE_URL}/sessions/${sessionId}/candidate-access`,
+    {
+      params: {
+        token,
+      },
+    },
+  );
+
+  return response.data;
+}
+
+export async function submitCandidateConsent(sessionId, token) {
+  const response = await axios.patch(
+    `${API_BASE_URL}/sessions/${sessionId}/candidate-consent`,
+    null,
+    {
+      params: {
+        token,
+      },
+    },
+  );
+
+  return response.data;
+}

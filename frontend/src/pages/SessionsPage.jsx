@@ -23,7 +23,6 @@ import {
   createSession,
   deleteSessionById,
   getSessions,
-  updateSession,
 } from "../services/sessionApi";
 
 export default function SessionsPage() {
@@ -159,33 +158,34 @@ export default function SessionsPage() {
   //   setSessions(updatedSessions);
   // }
 
-  async function markCompleted(sessionId) {
+  async function copyToClipboard(text, label) {
     try {
-      setErrorMessage("");
-
-      await updateSession(sessionId, {
-        session_status: "Completed",
-        analysis_status: "Ready for Analysis",
-      });
-
-      await loadPageData();
+      await navigator.clipboard.writeText(text);
+      alert(`${label} copied to clipboard.`);
     } catch (error) {
       console.error(error);
-      setErrorMessage(
-        error?.response?.data?.detail ||
-          "Something went wrong while updating the session.",
-      );
+      alert("Could not copy link. Please copy it manually.");
     }
   }
 
-  // function markCompleted(sessionId) {
-  //   updateSession(sessionId, {
-  //     sessionStatus: "Completed",
-  //     analysisStatus: "Ready for Analysis",
-  //   });
+  function getActionButtonClass(type = "default") {
+    const baseClass =
+      "inline-flex h-9 min-w-[92px] items-center justify-center gap-1 rounded-lg border px-3 text-xs font-semibold transition";
 
-  //   loadPageData();
-  // }
+    const styles = {
+      default: "border-gray-200 bg-gray-50 text-gray-700 hover:bg-gray-100",
+      primary: "border-gray-900 bg-gray-900 text-white hover:bg-gray-800",
+      success: "border-green-200 bg-green-50 text-green-700 hover:bg-green-100",
+      info: "border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100",
+      purple:
+        "border-purple-200 bg-purple-50 text-purple-700 hover:bg-purple-100",
+      indigo:
+        "border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100",
+      danger: "border-red-200 bg-red-50 text-red-700 hover:bg-red-100",
+    };
+
+    return `${baseClass} ${styles[type] || styles.default}`;
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-8">
@@ -284,7 +284,7 @@ export default function SessionsPage() {
                   <th className="px-6 py-3">Consent</th>
                   <th className="px-6 py-3">Status</th>
                   <th className="px-6 py-3">Analysis</th>
-                  <th className="px-6 py-3">Actions</th>
+                  <th className="px-6 py-3 min-w-[300px]">Actions</th>
                 </tr>
               </thead>
 
@@ -337,60 +337,82 @@ export default function SessionsPage() {
                     </td>
 
                     <td className="px-6 py-4">
-                      <div className="flex flex-wrap gap-2">
-                        <button
-                          onClick={() =>
-                            navigate(`/meeting/${session.session_id}`)
-                          }
-                          className="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-100"
-                        >
-                          <MonitorPlay size={14} />
-                          Meeting
-                        </button>
-
-                        {session.consent_status !== "Given" && (
+                      <div className="flex min-w-[280px] flex-col gap-2">
+                        {/* Primary workflow actions */}
+                        <div className="flex flex-wrap gap-2">
                           <button
                             onClick={() =>
-                              navigate(`/consent/${session.session_id}`)
+                              navigate(`/meeting/${session.session_id}`)
                             }
-                            className="inline-flex items-center gap-1 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-xs font-semibold text-green-700 hover:bg-green-100"
-                          >
-                            <CheckCircle2 size={14} />
-                            Consent
-                          </button>
-                        )}
-
-                        {session.consent_status === "Given" && (
-                          <button
-                            onClick={() =>
-                              navigate(`/consent/${session.session_id}`)
-                            }
-                            className="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-100"
-                          >
-                            <CheckCircle2 size={14} />
-                            View Consent
-                          </button>
-                        )}
-
-                        {session.session_status !== "Completed" && (
-                          <button
-                            onClick={() => markCompleted(session.session_id)}
-                            className="inline-flex items-center gap-1 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-100"
+                            className={getActionButtonClass("primary")}
                           >
                             <MonitorPlay size={14} />
-                            Complete
+                            Meeting
                           </button>
-                        )}
 
-                        <button
-                          onClick={() =>
-                            handleDeleteSession(session.session_id)
-                          }
-                          className="inline-flex items-center gap-1 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-100"
-                        >
-                          <Trash2 size={14} />
-                          Delete
-                        </button>
+                          {session.consent_status !== "Given" ? (
+                            <button
+                              onClick={() =>
+                                navigate(`/consent/${session.session_id}`)
+                              }
+                              className={getActionButtonClass("success")}
+                            >
+                              <CheckCircle2 size={14} />
+                              Consent
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() =>
+                                navigate(`/consent/${session.session_id}`)
+                              }
+                              className={getActionButtonClass("default")}
+                            >
+                              <CheckCircle2 size={14} />
+                              View Consent
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Secondary actions */}
+                        <div className="flex flex-wrap gap-2">
+                          {session.candidate_consent_url && (
+                            <button
+                              onClick={() =>
+                                copyToClipboard(
+                                  session.candidate_consent_url,
+                                  "Candidate consent link",
+                                )
+                              }
+                              className={getActionButtonClass("purple")}
+                            >
+                              Copy Consent
+                            </button>
+                          )}
+
+                          {session.candidate_meeting_url && (
+                            <button
+                              onClick={() =>
+                                copyToClipboard(
+                                  session.candidate_meeting_url,
+                                  "Candidate meeting link",
+                                )
+                              }
+                              className={getActionButtonClass("indigo")}
+                            >
+                              Copy Meeting
+                            </button>
+                          )}
+
+                          <button
+                            onClick={() =>
+                              handleDeleteSession(session.session_id)
+                            }
+                            className={getActionButtonClass("danger")}
+                          >
+                            <Trash2 size={14} />
+                            Delete
+                          </button>
+                        </div>
                       </div>
                     </td>
                   </tr>
@@ -468,6 +490,16 @@ function SessionFormModal({ candidates, onClose, onCreated }) {
         error?.response?.data?.detail ||
           "Something went wrong while scheduling the session.",
       );
+    }
+  }
+
+  async function copyToClipboard(text, label) {
+    try {
+      await navigator.clipboard.writeText(text);
+      alert(`${label} copied to clipboard.`);
+    } catch (error) {
+      console.error(error);
+      alert("Could not copy link. Please copy it manually.");
     }
   }
 
