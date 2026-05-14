@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* @media print {
+@media print {
   body {
     background: white !important;
   }
@@ -35,4 +35,4 @@
     page-break-inside: avoid;
     page-break-after: auto;
   }
-} */
+}
