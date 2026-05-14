@@ -71,86 +71,84 @@ export default function VideoAnalysisDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-950">
-            Video Deception Analysis Dashboard
-          </h1>
+    // <div className="min-h-screen bg-gray-100">
+    <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-950">
+          Video Deception Analysis Dashboard
+        </h1>
 
-          <p className="text-gray-600 mt-2 max-w-3xl">
-            Upload an interview video to generate a dynamic behavioral
-            inconsistency timeline. The result is intended to support
-            interviewer review, not to make an automatic hiring decision.
-          </p>
+        <p className="text-gray-600 mt-2 max-w-3xl">
+          Upload an interview video to generate a dynamic behavioral
+          inconsistency timeline. The result is intended to support interviewer
+          review, not to make an automatic hiring decision.
+        </p>
+      </div>
+
+      {errorMessage && (
+        <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-red-700">
+          {errorMessage}
         </div>
+      )}
 
-        {errorMessage && (
-          <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-red-700">
-            {errorMessage}
-          </div>
-        )}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="space-y-6">
+          <VideoUploadCard
+            selectedFile={selectedFile}
+            onFileChange={handleFileChange}
+            onAnalyze={handleAnalyze}
+            isLoading={isLoading}
+          />
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="space-y-6">
-            <VideoUploadCard
-              selectedFile={selectedFile}
-              onFileChange={handleFileChange}
-              onAnalyze={handleAnalyze}
-              isLoading={isLoading}
-            />
+          {analysis && (
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+              <h2 className="text-lg font-semibold text-gray-900">
+                Analysis Record
+              </h2>
 
-            {analysis && (
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-                <h2 className="text-lg font-semibold text-gray-900">
-                  Analysis Record
-                </h2>
-
-                <div className="mt-3 text-sm text-gray-600 space-y-2">
-                  <p>
-                    Analysis ID:{" "}
-                    <span className="font-semibold">
-                      {analysis.analysis_id}
-                    </span>
-                  </p>
-                  <p>
-                    Video:{" "}
-                    <span className="font-semibold">{analysis.video_name}</span>
-                  </p>
-                  <p>
-                    Segments:{" "}
-                    <span className="font-semibold">
-                      {analysis.timeline?.length || 0}
-                    </span>
-                  </p>
-                </div>
+              <div className="mt-3 text-sm text-gray-600 space-y-2">
+                <p>
+                  Analysis ID:{" "}
+                  <span className="font-semibold">{analysis.analysis_id}</span>
+                </p>
+                <p>
+                  Video:{" "}
+                  <span className="font-semibold">{analysis.video_name}</span>
+                </p>
+                <p>
+                  Segments:{" "}
+                  <span className="font-semibold">
+                    {analysis.timeline?.length || 0}
+                  </span>
+                </p>
               </div>
-            )}
-          </div>
-
-          <div className="lg:col-span-2">
-            <VideoPreviewPlayer videoUrl={videoUrl} ref={videoRef} />
-          </div>
+            </div>
+          )}
         </div>
 
-        <div className="mt-6">
-          <AnalysisSummaryCards analysis={analysis} />
-        </div>
-
-        <div className="mt-6">
-          <InconsistencyTimeline
-            timeline={analysis?.timeline}
-            onSegmentClick={handleSegmentClick}
-          />
-        </div>
-
-        <div className="mt-6">
-          <FlaggedSegmentsTable
-            timeline={analysis?.timeline}
-            onSegmentClick={handleSegmentClick}
-          />
+        <div className="lg:col-span-2">
+          <VideoPreviewPlayer videoUrl={videoUrl} ref={videoRef} />
         </div>
       </div>
+
+      <div className="mt-6">
+        <AnalysisSummaryCards analysis={analysis} />
+      </div>
+
+      <div className="mt-6">
+        <InconsistencyTimeline
+          timeline={analysis?.timeline}
+          onSegmentClick={handleSegmentClick}
+        />
+      </div>
+
+      <div className="mt-6">
+        <FlaggedSegmentsTable
+          timeline={analysis?.timeline}
+          onSegmentClick={handleSegmentClick}
+        />
+      </div>
     </div>
+    // </div>
   );
 }

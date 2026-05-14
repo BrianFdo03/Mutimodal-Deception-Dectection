@@ -21,8 +21,6 @@ ENV_PATH = BACKEND_DIR / ".env"
 # Load environment variables from .env
 load_dotenv(dotenv_path=ENV_PATH)
 
-print(os.getenv("DATABASE_URL"))
-
 # Get DB URL from environment
 SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL")
 
