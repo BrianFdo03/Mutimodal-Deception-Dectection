@@ -1,29 +1,48 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   AlertTriangle,
   CalendarDays,
+  Camera,
   CheckCircle2,
   ClipboardList,
+  Loader2,
   Mic,
   MonitorUp,
   PhoneOff,
   PlayCircle,
-  UserRound,
+  Square,
+  Upload,
   Video,
 } from "lucide-react";
 
 import { getSessionById, updateSession } from "../services/localDataService";
 
+import { analyzeVideo } from "../services/videoAnalysisApi";
+
 export default function MeetingRoomPage() {
   const { sessionId } = useParams();
   const navigate = useNavigate();
 
+  const localVideoRef = useRef(null);
+  const previewVideoRef = useRef(null);
+  const mediaRecorderRef = useRef(null);
+  const streamRef = useRef(null);
+  const recordedChunksRef = useRef([]);
+
   const [session, setSession] = useState(null);
   const [errorMessage, setErrorMessage] = useState("");
+
   const [meetingStarted, setMeetingStarted] = useState(false);
   const [meetingEnded, setMeetingEnded] = useState(false);
   const [interviewNotes, setInterviewNotes] = useState("");
+
+  const [cameraReady, setCameraReady] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordedBlob, setRecordedBlob] = useState(null);
+  const [recordedVideoUrl, setRecordedVideoUrl] = useState("");
+
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   useEffect(() => {
     const foundSession = getSessionById(sessionId);
@@ -36,7 +55,63 @@ export default function MeetingRoomPage() {
     setSession(foundSession);
     setInterviewNotes(foundSession.meetingNotes || "");
     setMeetingEnded(foundSession.sessionStatus === "Completed");
+
+    return () => {
+      stopCameraStream();
+      if (recordedVideoUrl) {
+        URL.revokeObjectURL(recordedVideoUrl);
+      }
+    };
   }, [sessionId]);
+
+  async function requestCameraAccess() {
+    try {
+      setErrorMessage("");
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: true,
+        audio: true,
+      });
+
+      streamRef.current = stream;
+
+      if (localVideoRef.current) {
+        localVideoRef.current.srcObject = stream;
+      }
+
+      setCameraReady(true);
+    } catch (error) {
+      console.error(error);
+      setErrorMessage(
+        "Camera or microphone access was denied. Please allow permissions and try again.",
+      );
+    }
+  }
+
+  function stopCameraStream() {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+
+    setCameraReady(false);
+  }
+
+  function getSupportedMimeType() {
+    const preferredTypes = [
+      "video/webm;codecs=vp9,opus",
+      "video/webm;codecs=vp8,opus",
+      "video/webm",
+    ];
+
+    for (const type of preferredTypes) {
+      if (MediaRecorder.isTypeSupported(type)) {
+        return type;
+      }
+    }
+
+    return "";
+  }
 
   function startMeeting() {
     setMeetingStarted(true);
@@ -49,6 +124,56 @@ export default function MeetingRoomPage() {
       ...currentSession,
       sessionStatus: "In Progress",
     }));
+  }
+
+  function startRecording() {
+    if (!streamRef.current) {
+      setErrorMessage("Please enable camera and microphone before recording.");
+      return;
+    }
+
+    recordedChunksRef.current = [];
+    setRecordedBlob(null);
+    setRecordedVideoUrl("");
+
+    const mimeType = getSupportedMimeType();
+
+    const recorderOptions = mimeType ? { mimeType } : undefined;
+
+    const mediaRecorder = new MediaRecorder(streamRef.current, recorderOptions);
+
+    mediaRecorderRef.current = mediaRecorder;
+
+    mediaRecorder.ondataavailable = (event) => {
+      if (event.data && event.data.size > 0) {
+        recordedChunksRef.current.push(event.data);
+      }
+    };
+
+    mediaRecorder.onstop = () => {
+      const blob = new Blob(recordedChunksRef.current, {
+        type: mimeType || "video/webm",
+      });
+
+      const videoUrl = URL.createObjectURL(blob);
+
+      setRecordedBlob(blob);
+      setRecordedVideoUrl(videoUrl);
+      setIsRecording(false);
+    };
+
+    mediaRecorder.start();
+    setIsRecording(true);
+  }
+
+  function stopRecording() {
+    if (!mediaRecorderRef.current) {
+      return;
+    }
+
+    if (mediaRecorderRef.current.state !== "inactive") {
+      mediaRecorderRef.current.stop();
+    }
   }
 
   function saveNotes() {
@@ -68,9 +193,15 @@ export default function MeetingRoomPage() {
       return;
     }
 
+    if (isRecording) {
+      stopRecording();
+    }
+
     updateSession(sessionId, {
       sessionStatus: "Completed",
-      analysisStatus: "Ready for Analysis",
+      analysisStatus: recordedBlob
+        ? "Ready for Analysis"
+        : "Recording Required",
       meetingNotes: interviewNotes,
       completedAt: new Date().toISOString(),
     });
@@ -80,13 +211,60 @@ export default function MeetingRoomPage() {
     setSession((currentSession) => ({
       ...currentSession,
       sessionStatus: "Completed",
-      analysisStatus: "Ready for Analysis",
+      analysisStatus: recordedBlob
+        ? "Ready for Analysis"
+        : "Recording Required",
       meetingNotes: interviewNotes,
       completedAt: new Date().toISOString(),
     }));
   }
 
-  if (errorMessage) {
+  async function analyzeRecordedInterview() {
+    if (!recordedBlob) {
+      setErrorMessage("No recorded video is available for analysis.");
+      return;
+    }
+
+    try {
+      setIsAnalyzing(true);
+      setErrorMessage("");
+
+      const recordedFile = new File(
+        [recordedBlob],
+        `session-${sessionId}-interview-recording.webm`,
+        {
+          type: recordedBlob.type || "video/webm",
+        },
+      );
+
+      const response = await analyzeVideo(recordedFile);
+
+      if (!response.success) {
+        throw new Error(response.message || "Video analysis failed.");
+      }
+
+      const analysisId = response.data.analysis_id;
+
+      updateSession(sessionId, {
+        analysisStatus: "Analyzed",
+        linkedAnalysisId: analysisId,
+        sessionStatus: "Analyzed",
+      });
+
+      navigate(`/saved-analysis?id=${analysisId}`);
+    } catch (error) {
+      console.error(error);
+      setErrorMessage(
+        error?.response?.data?.detail ||
+          error.message ||
+          "Something went wrong while analyzing the recorded interview.",
+      );
+    } finally {
+      setIsAnalyzing(false);
+    }
+  }
+
+  if (errorMessage && !session) {
     return (
       <div className="max-w-5xl mx-auto px-6 py-8">
         <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-red-700">
@@ -122,8 +300,8 @@ export default function MeetingRoomPage() {
 
           <p className="mt-2 max-w-3xl text-gray-600">
             One-to-one interview session between one interviewer and one
-            candidate. This demo room prepares the workflow for future live
-            conferencing or recording.
+            candidate. The candidate video can be recorded and sent directly to
+            the analysis pipeline.
           </p>
         </div>
 
@@ -137,12 +315,18 @@ export default function MeetingRoomPage() {
 
           <button
             onClick={() => navigate("/analyze-video")}
-            className="rounded-xl bg-gray-950 px-5 py-3 text-sm font-semibold text-white hover:bg-gray-800"
+            className="rounded-xl border border-gray-300 bg-white px-5 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50"
           >
-            Analyze Recording
+            Manual Upload
           </button>
         </div>
       </div>
+
+      {errorMessage && (
+        <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 p-5 text-red-700">
+          {errorMessage}
+        </div>
+      )}
 
       {meetingEnded && (
         <div className="mb-6 rounded-2xl border border-green-200 bg-green-50 p-5 text-green-800">
@@ -151,8 +335,7 @@ export default function MeetingRoomPage() {
             <div>
               <p className="font-semibold">Interview completed</p>
               <p className="mt-1 text-sm">
-                This session is ready for video analysis. Use the Analyze
-                Recording button to upload the recorded interview file.
+                This session is ready for analysis if a recording is available.
               </p>
             </div>
           </div>
@@ -163,14 +346,16 @@ export default function MeetingRoomPage() {
         <div className="xl:col-span-2 space-y-6">
           <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <VideoPanel
+              <LiveCandidatePanel
                 title={session.candidateName}
                 subtitle="Candidate / Interviewee"
                 initials={getInitials(session.candidateName)}
+                localVideoRef={localVideoRef}
+                cameraReady={cameraReady}
                 isActive={meetingStarted && !meetingEnded}
               />
 
-              <VideoPanel
+              <InterviewerPanel
                 title="Demo Interviewer"
                 subtitle="HR Evaluator"
                 initials="DI"
@@ -179,13 +364,53 @@ export default function MeetingRoomPage() {
             </div>
 
             <div className="mt-6 flex flex-wrap justify-center gap-3">
+              {!cameraReady && (
+                <button
+                  onClick={requestCameraAccess}
+                  className="inline-flex items-center gap-2 rounded-xl bg-gray-950 px-5 py-3 text-sm font-semibold text-white hover:bg-gray-800"
+                >
+                  <Camera size={18} />
+                  Enable Camera
+                </button>
+              )}
+
               {!meetingStarted && !meetingEnded && (
                 <button
                   onClick={startMeeting}
-                  className="inline-flex items-center gap-2 rounded-xl bg-green-700 px-5 py-3 text-sm font-semibold text-white hover:bg-green-800"
+                  disabled={!cameraReady}
+                  className={`inline-flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold ${
+                    cameraReady
+                      ? "bg-green-700 text-white hover:bg-green-800"
+                      : "bg-gray-300 text-gray-600 cursor-not-allowed"
+                  }`}
                 >
                   <PlayCircle size={18} />
                   Start Interview
+                </button>
+              )}
+
+              {!isRecording && meetingStarted && !meetingEnded && (
+                <button
+                  onClick={startRecording}
+                  disabled={!cameraReady}
+                  className={`inline-flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold ${
+                    cameraReady
+                      ? "bg-blue-700 text-white hover:bg-blue-800"
+                      : "bg-gray-300 text-gray-600 cursor-not-allowed"
+                  }`}
+                >
+                  <Video size={18} />
+                  Start Recording
+                </button>
+              )}
+
+              {isRecording && (
+                <button
+                  onClick={stopRecording}
+                  className="inline-flex items-center gap-2 rounded-xl bg-yellow-600 px-5 py-3 text-sm font-semibold text-white hover:bg-yellow-700"
+                >
+                  <Square size={18} />
+                  Stop Recording
                 </button>
               )}
 
@@ -194,11 +419,7 @@ export default function MeetingRoomPage() {
                 label="Mute"
                 disabled={!meetingStarted || meetingEnded}
               />
-              <MeetingButton
-                icon={Video}
-                label="Camera"
-                disabled={!meetingStarted || meetingEnded}
-              />
+
               <MeetingButton
                 icon={MonitorUp}
                 label="Share"
@@ -220,7 +441,60 @@ export default function MeetingRoomPage() {
                 </button>
               )}
             </div>
+
+            {isRecording && (
+              <div className="mt-5 rounded-2xl border border-red-200 bg-red-50 p-4 text-center text-sm font-semibold text-red-700">
+                Recording in progress...
+              </div>
+            )}
           </div>
+
+          {recordedVideoUrl && (
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+              <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-950">
+                    Recorded Interview Preview
+                  </h2>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Review the recording before sending it to the analysis
+                    pipeline.
+                  </p>
+                </div>
+
+                <button
+                  onClick={analyzeRecordedInterview}
+                  disabled={isAnalyzing}
+                  className={`inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold ${
+                    isAnalyzing
+                      ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+                      : "bg-gray-950 text-white hover:bg-gray-800"
+                  }`}
+                >
+                  {isAnalyzing ? (
+                    <>
+                      <Loader2 size={18} className="animate-spin" />
+                      Analyzing...
+                    </>
+                  ) : (
+                    <>
+                      <Upload size={18} />
+                      Analyze Recording
+                    </>
+                  )}
+                </button>
+              </div>
+
+              <div className="overflow-hidden rounded-2xl bg-black">
+                <video
+                  ref={previewVideoRef}
+                  src={recordedVideoUrl}
+                  controls
+                  className="w-full max-h-[460px]"
+                />
+              </div>
+            </div>
+          )}
 
           <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
             <div className="flex items-start gap-3">
@@ -265,24 +539,23 @@ export default function MeetingRoomPage() {
 
           <div className="rounded-2xl border border-blue-100 bg-blue-50 p-6">
             <h2 className="text-lg font-semibold text-blue-950">
-              Demo Meeting Limitation
+              Recording Workflow
             </h2>
             <p className="mt-2 text-sm leading-6 text-blue-800">
-              This is a product workflow screen. Full live video conferencing
-              can be implemented later using WebRTC, Jitsi, Daily, or another
-              meeting SDK. For now, recorded videos are uploaded to the existing
-              analysis pipeline.
+              This demo records the candidate/interviewer media stream in the
+              browser. The resulting recording is sent to the existing FastAPI
+              analysis endpoint.
             </p>
           </div>
 
           <div className="rounded-2xl border border-yellow-100 bg-yellow-50 p-6">
             <h2 className="text-lg font-semibold text-yellow-950">
-              Analysis Reminder
+              Format Notice
             </h2>
             <p className="mt-2 text-sm leading-6 text-yellow-800">
-              After ending the interview, upload the recorded session video
-              using the analysis page to generate the behavioral inconsistency
-              timeline.
+              Browser recordings are usually saved as WEBM. If your backend
+              cannot decode WEBM, we can add FFmpeg conversion to MP4 as the
+              next improvement.
             </p>
           </div>
         </div>
@@ -346,7 +619,57 @@ function ConsentRequiredView({ session, navigate }) {
   );
 }
 
-function VideoPanel({ title, subtitle, initials, isActive }) {
+function LiveCandidatePanel({
+  title,
+  subtitle,
+  initials,
+  localVideoRef,
+  cameraReady,
+  isActive,
+}) {
+  return (
+    <div className="overflow-hidden rounded-2xl bg-gray-950">
+      <div className="relative flex h-80 items-center justify-center">
+        {cameraReady ? (
+          <video
+            ref={localVideoRef}
+            autoPlay
+            muted
+            playsInline
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <div className="text-center">
+            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-white text-2xl font-bold text-gray-950">
+              {initials}
+            </div>
+
+            <p className="mt-4 font-semibold text-white">{title}</p>
+            <p className="text-sm text-gray-400">{subtitle}</p>
+          </div>
+        )}
+
+        <div className="absolute left-4 top-4">
+          {isActive ? (
+            <span className="rounded-full bg-green-500 px-3 py-1 text-xs font-semibold text-white">
+              Live
+            </span>
+          ) : (
+            <span className="rounded-full bg-gray-700 px-3 py-1 text-xs font-semibold text-gray-200">
+              Waiting
+            </span>
+          )}
+        </div>
+
+        <div className="absolute bottom-4 left-4 rounded-full bg-black/60 px-3 py-1 text-xs font-semibold text-white">
+          {title}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function InterviewerPanel({ title, subtitle, initials, isActive }) {
   return (
     <div className="overflow-hidden rounded-2xl bg-gray-950">
       <div className="relative flex h-80 items-center justify-center">
@@ -417,6 +740,9 @@ function SessionInfoCard({ session }) {
         <InfoRow label="Consent" value={session.consentStatus} />
         <InfoRow label="Status" value={session.sessionStatus} />
         <InfoRow label="Analysis" value={session.analysisStatus} />
+        {session.linkedAnalysisId && (
+          <InfoRow label="Analysis ID" value={`#${session.linkedAnalysisId}`} />
+        )}
       </div>
     </div>
   );

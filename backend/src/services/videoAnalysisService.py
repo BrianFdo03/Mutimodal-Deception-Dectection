@@ -21,9 +21,9 @@ def save_uploaded_video(file: UploadFile) -> Path:
 
     file_extension = Path(file.filename).suffix.lower()
 
-    if file_extension not in [".mp4", ".mov", ".avi", ".mkv"]:
+    if file_extension not in [".mp4", ".mov", ".avi", ".mkv", ".webm", ".wmv"]:
         raise ValueError(
-            "Unsupported video format. Please upload MP4, MOV, AVI, or MKV."
+            "Unsupported video format. Please upload MP4, MOV, AVI, MKV, WEBM, or WMV."
         )
 
     unique_filename = f"{uuid.uuid4()}{file_extension}"
