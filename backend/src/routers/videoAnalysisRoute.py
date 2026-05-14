@@ -1,6 +1,9 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, Query
 from sqlalchemy.orm import Session
 
+from pathlib import Path
+from fastapi import Request
+
 from backend.src.core.databaseCore import get_db
 from backend.src.services.videoAnalysisService import (
     analyze_uploaded_video,
@@ -54,6 +57,7 @@ async def analyze_video(
 @router.get("/{analysis_id}")
 def get_video_analysis(
     analysis_id: int,
+    request: Request,
     db: Session = Depends(get_db)
 ):
     """
@@ -70,6 +74,12 @@ def get_video_analysis(
             status_code=404,
             detail="Video analysis result not found."
         )
+    
+    video_url = None
+
+    if analysis.uploaded_file_path:
+        filename = Path(analysis.uploaded_file_path).name
+        video_url = str(request.base_url) + f"uploads/{filename}"
 
     return {
         "success": True,
@@ -78,6 +88,7 @@ def get_video_analysis(
             "session_id": analysis.session_id,
             "video_name": analysis.video_name,
             "uploaded_file_path": analysis.uploaded_file_path,
+            "video_url": video_url,
             "overall_score": analysis.overall_score,
             "overall_risk": analysis.overall_risk,
             "metadata": analysis.metadata_json,

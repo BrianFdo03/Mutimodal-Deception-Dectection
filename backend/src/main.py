@@ -1,4 +1,7 @@
 from fastapi import FastAPI
+from pathlib import Path
+from fastapi.staticfiles import StaticFiles
+
 from fastapi.middleware.cors import CORSMiddleware
 
 from backend.src.core.databaseCore import engine, Base
@@ -11,6 +14,17 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Multimodal Deception Detection API")
 
+BACKEND_DIR = Path(__file__).resolve().parents[1]
+UPLOAD_DIR = BACKEND_DIR / "uploads"
+
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+
+app.mount(
+    "/uploads",
+    StaticFiles(directory=str(UPLOAD_DIR)),
+    name="uploads"
+)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # restrict later in production
@@ -20,7 +34,6 @@ app.add_middleware(
 )
 
 app.include_router(video_analysis_router)
-# app.include_router(meetings.router)
 
 @app.get("/")
 def root():

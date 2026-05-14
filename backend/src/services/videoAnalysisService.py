@@ -14,7 +14,6 @@ UPLOAD_DIR = BACKEND_DIR / "uploads"
 
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
-
 def save_uploaded_video(file: UploadFile) -> Path:
     """
     Saves uploaded video to backend/uploads/ and returns the saved path.
