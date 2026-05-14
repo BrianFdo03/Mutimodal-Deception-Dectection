@@ -24,7 +24,7 @@ class InterviewStage(Base):
     sprint = relationship("InterviewSprint", back_populates="stages")
     
     # Link forward to the Sessions in this stage
-    sessions = relationship("Session", back_populates="stage", cascade="all, delete-orphan")
+    # sessions = relationship("Session", back_populates="stage", cascade="all, delete-orphan")
 
     # Metadata
     created_at = Column(DateTime(timezone=True), server_default=func.now())

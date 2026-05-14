@@ -7,6 +7,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from backend.src.core.databaseCore import engine, Base
 import backend.src.models # This triggers the __init__.py and loads all classes
 
+from backend.src.routers.candidateRoute import router as candidate_router
+from backend.src.routers.sessionRoute import router as session_router
 from backend.src.routers.videoAnalysisRoute import router as video_analysis_router
 
 # Create tables in DB
@@ -33,6 +35,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(candidate_router)
+app.include_router(session_router)
 app.include_router(video_analysis_router)
 
 @app.get("/")
