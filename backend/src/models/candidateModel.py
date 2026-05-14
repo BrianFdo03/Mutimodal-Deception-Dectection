@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, DateTime, Date, ARRAY
 from sqlalchemy.sql import func
-from src.core.databaseCore import Base
+from backend.src.core.databaseCore import Base
 from sqlalchemy.orm import relationship
 
 class Candidate(Base):
@@ -30,6 +30,7 @@ class Candidate(Base):
     # sprint_id (multi-valued, not null) -> e.g. [1, 5, 12]
     sprint_ids = Column(ARRAY(Integer), nullable=False)
 
+    sessions = relationship("Session", back_populates="candidate")
     # Relationship to WorkExperience (explained below)
     work_experiences = relationship("WorkExperience", back_populates="candidate", cascade="all, delete-orphan")
 

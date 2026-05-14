@@ -97,3 +97,13 @@ backend/.ruff_cache/
 
 # Pyre
 backend/.pyre/
+*.npy
+
+*.pyc
+
+backend/uploads/*
+backend/storage/inference_outputs/*
+
+# optional: avoid committing large model files
+backend/ml/video/model/*.keras
+backend/ml/video/mediapipe_models/*.task
