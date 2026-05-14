@@ -16,7 +16,9 @@ import {
   Video,
 } from "lucide-react";
 
-import { getSessionById, updateSession } from "../services/localDataService";
+// import { getSessionById, updateSession } from "../services/localDataService";
+
+import { getSessionById, updateSession } from "../services/sessionApi";
 
 import { analyzeVideo } from "../services/videoAnalysisApi";
 
@@ -45,24 +47,68 @@ export default function MeetingRoomPage() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   useEffect(() => {
-    const foundSession = getSessionById(sessionId);
-
-    if (!foundSession) {
-      setErrorMessage("Interview session was not found.");
-      return;
-    }
-
-    setSession(foundSession);
-    setInterviewNotes(foundSession.meetingNotes || "");
-    setMeetingEnded(foundSession.sessionStatus === "Completed");
-
     return () => {
-      stopCameraStream();
       if (recordedVideoUrl) {
         URL.revokeObjectURL(recordedVideoUrl);
       }
     };
+  }, [recordedVideoUrl]);
+
+  useEffect(() => {
+    loadSession();
+
+    return () => {
+      stopCameraStream();
+    };
   }, [sessionId]);
+  // useEffect(() => {
+  //   const foundSession = getSessionById(sessionId);
+
+  //   if (!foundSession) {
+  //     setErrorMessage("Interview session was not found.");
+  //     return;
+  //   }
+
+  //   setSession(foundSession);
+  //   setInterviewNotes(foundSession.meetingNotes || "");
+  //   setMeetingEnded(foundSession.sessionStatus === "Completed");
+
+  //   return () => {
+  //     stopCameraStream();
+  //     if (recordedVideoUrl) {
+  //       URL.revokeObjectURL(recordedVideoUrl);
+  //     }
+  //   };
+  // }, [sessionId]);
+
+  async function loadSession() {
+    try {
+      setErrorMessage("");
+
+      const response = await getSessionById(sessionId);
+
+      if (!response.success) {
+        throw new Error("Interview session was not found.");
+      }
+
+      const loadedSession = response.data;
+
+      setSession(loadedSession);
+      setInterviewNotes(loadedSession.meeting_notes || "");
+      setMeetingEnded(
+        loadedSession.session_status === "Completed" ||
+          loadedSession.session_status === "Analyzed",
+      );
+    } catch (error) {
+      console.error(error);
+
+      setErrorMessage(
+        error?.response?.data?.detail ||
+          error.message ||
+          "Interview session was not found.",
+      );
+    }
+  }
 
   async function requestCameraAccess() {
     try {
@@ -113,18 +159,41 @@ export default function MeetingRoomPage() {
     return "";
   }
 
-  function startMeeting() {
-    setMeetingStarted(true);
+  async function startMeeting() {
+    try {
+      setErrorMessage("");
 
-    updateSession(sessionId, {
-      sessionStatus: "In Progress",
-    });
+      await updateSession(sessionId, {
+        session_status: "In Progress",
+      });
 
-    setSession((currentSession) => ({
-      ...currentSession,
-      sessionStatus: "In Progress",
-    }));
+      setMeetingStarted(true);
+
+      setSession((currentSession) => ({
+        ...currentSession,
+        session_status: "In Progress",
+      }));
+    } catch (error) {
+      console.error(error);
+
+      setErrorMessage(
+        error?.response?.data?.detail ||
+          "Something went wrong while starting the interview.",
+      );
+    }
   }
+  // function startMeeting() {
+  //   setMeetingStarted(true);
+
+  //   updateSession(sessionId, {
+  //     sessionStatus: "In Progress",
+  //   });
+
+  //   setSession((currentSession) => ({
+  //     ...currentSession,
+  //     sessionStatus: "In Progress",
+  //   }));
+  // }
 
   function startRecording() {
     if (!streamRef.current) {
@@ -176,15 +245,33 @@ export default function MeetingRoomPage() {
     }
   }
 
-  function saveNotes() {
-    updateSession(sessionId, {
-      meetingNotes: interviewNotes,
-    });
+  async function saveNotes() {
+    try {
+      setErrorMessage("");
 
-    alert("Interview notes saved.");
+      await updateSession(sessionId, {
+        meeting_notes: interviewNotes,
+      });
+
+      alert("Interview notes saved.");
+    } catch (error) {
+      console.error(error);
+
+      setErrorMessage(
+        error?.response?.data?.detail ||
+          "Something went wrong while saving interview notes.",
+      );
+    }
   }
+  // function saveNotes() {
+  //   updateSession(sessionId, {
+  //     meetingNotes: interviewNotes,
+  //   });
 
-  function endMeeting() {
+  //   alert("Interview notes saved.");
+  // }
+
+  async function endMeeting() {
     const confirmed = window.confirm(
       "Are you sure you want to end this interview session?",
     );
@@ -197,27 +284,70 @@ export default function MeetingRoomPage() {
       stopRecording();
     }
 
-    updateSession(sessionId, {
-      sessionStatus: "Completed",
-      analysisStatus: recordedBlob
-        ? "Ready for Analysis"
-        : "Recording Required",
-      meetingNotes: interviewNotes,
-      completedAt: new Date().toISOString(),
-    });
+    try {
+      setErrorMessage("");
 
-    setMeetingEnded(true);
-
-    setSession((currentSession) => ({
-      ...currentSession,
-      sessionStatus: "Completed",
-      analysisStatus: recordedBlob
+      const analysisStatus = recordedBlob
         ? "Ready for Analysis"
-        : "Recording Required",
-      meetingNotes: interviewNotes,
-      completedAt: new Date().toISOString(),
-    }));
+        : "Recording Required";
+
+      await updateSession(sessionId, {
+        session_status: "Completed",
+        analysis_status: analysisStatus,
+        meeting_notes: interviewNotes,
+      });
+
+      setMeetingEnded(true);
+
+      setSession((currentSession) => ({
+        ...currentSession,
+        session_status: "Completed",
+        analysis_status: analysisStatus,
+        meeting_notes: interviewNotes,
+      }));
+    } catch (error) {
+      console.error(error);
+
+      setErrorMessage(
+        error?.response?.data?.detail ||
+          "Something went wrong while ending the interview.",
+      );
+    }
   }
+  // function endMeeting() {
+  //   const confirmed = window.confirm(
+  //     "Are you sure you want to end this interview session?",
+  //   );
+
+  //   if (!confirmed) {
+  //     return;
+  //   }
+
+  //   if (isRecording) {
+  //     stopRecording();
+  //   }
+
+  //   updateSession(sessionId, {
+  //     sessionStatus: "Completed",
+  //     analysisStatus: recordedBlob
+  //       ? "Ready for Analysis"
+  //       : "Recording Required",
+  //     meetingNotes: interviewNotes,
+  //     completedAt: new Date().toISOString(),
+  //   });
+
+  //   setMeetingEnded(true);
+
+  //   setSession((currentSession) => ({
+  //     ...currentSession,
+  //     sessionStatus: "Completed",
+  //     analysisStatus: recordedBlob
+  //       ? "Ready for Analysis"
+  //       : "Recording Required",
+  //     meetingNotes: interviewNotes,
+  //     completedAt: new Date().toISOString(),
+  //   }));
+  // }
 
   async function analyzeRecordedInterview() {
     if (!recordedBlob) {
@@ -245,11 +375,16 @@ export default function MeetingRoomPage() {
 
       const analysisId = response.data.analysis_id;
 
-      updateSession(sessionId, {
-        analysisStatus: "Analyzed",
-        linkedAnalysisId: analysisId,
-        sessionStatus: "Analyzed",
+      await updateSession(sessionId, {
+        analysis_status: "Analyzed",
+        linked_analysis_id: analysisId,
+        session_status: "Analyzed",
       });
+      // updateSession(sessionId, {
+      //   analysisStatus: "Analyzed",
+      //   linkedAnalysisId: analysisId,
+      //   sessionStatus: "Analyzed",
+      // });
 
       navigate(`/saved-analysis?id=${analysisId}`);
     } catch (error) {
@@ -284,7 +419,7 @@ export default function MeetingRoomPage() {
     );
   }
 
-  const consentGiven = session.consentStatus === "Given";
+  const consentGiven = session.consent_status === "Given";
 
   if (!consentGiven) {
     return <ConsentRequiredView session={session} navigate={navigate} />;
@@ -347,9 +482,9 @@ export default function MeetingRoomPage() {
           <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <LiveCandidatePanel
-                title={session.candidateName}
+                title={session.candidate_name}
                 subtitle="Candidate / Interviewee"
-                initials={getInitials(session.candidateName)}
+                initials={getInitials(session.candidate_name)}
                 localVideoRef={localVideoRef}
                 cameraReady={cameraReady}
                 isActive={meetingStarted && !meetingEnded}
@@ -537,6 +672,27 @@ export default function MeetingRoomPage() {
         <div className="space-y-6">
           <SessionInfoCard session={session} />
 
+          {session.linked_analysis_id && (
+            <div className="rounded-2xl border border-green-200 bg-green-50 p-6">
+              <h2 className="text-lg font-semibold text-green-950">
+                Analysis Available
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-green-800">
+                This session has already been analyzed. You can open the saved
+                timeline and report.
+              </p>
+
+              <button
+                onClick={() =>
+                  navigate(`/saved-analysis?id=${session.linked_analysis_id}`)
+                }
+                className="mt-4 rounded-xl bg-green-700 px-5 py-3 text-sm font-semibold text-white hover:bg-green-800"
+              >
+                Open Analysis
+              </button>
+            </div>
+          )}
+
           <div className="rounded-2xl border border-blue-100 bg-blue-50 p-6">
             <h2 className="text-lg font-semibold text-blue-950">
               Recording Workflow
@@ -586,11 +742,12 @@ function ConsentRequiredView({ session, navigate }) {
 
             <div className="mt-6 rounded-2xl bg-white/70 p-5">
               <p className="text-sm text-yellow-900">
-                <span className="font-semibold">Session:</span> #{session.id}
+                <span className="font-semibold">Session:</span> #
+                {session.session_id}
               </p>
               <p className="mt-2 text-sm text-yellow-900">
                 <span className="font-semibold">Candidate:</span>{" "}
-                {session.candidateName}
+                {session.candidate_name}
               </p>
               <p className="mt-2 text-sm text-yellow-900">
                 <span className="font-semibold">Stage:</span> {session.stage}
@@ -599,7 +756,7 @@ function ConsentRequiredView({ session, navigate }) {
 
             <div className="mt-6 flex flex-wrap gap-3">
               <button
-                onClick={() => navigate(`/consent/${session.id}`)}
+                onClick={() => navigate(`/consent/${session.session_id}`)}
                 className="rounded-xl bg-yellow-700 px-5 py-3 text-sm font-semibold text-white hover:bg-yellow-800"
               >
                 Open Consent Form
@@ -731,17 +888,20 @@ function SessionInfoCard({ session }) {
       </div>
 
       <div className="mt-5 space-y-3 text-sm">
-        <InfoRow label="Session ID" value={`#${session.id}`} />
-        <InfoRow label="Candidate" value={session.candidateName} />
+        <InfoRow label="Session ID" value={`#${session.session_id}`} />
+        <InfoRow label="Candidate" value={session.candidate_name} />
         <InfoRow label="Stage" value={session.stage} />
-        <InfoRow label="Date" value={session.date} />
-        <InfoRow label="Time" value={session.time} />
-        <InfoRow label="Mode" value={session.meetingMode} />
-        <InfoRow label="Consent" value={session.consentStatus} />
-        <InfoRow label="Status" value={session.sessionStatus} />
-        <InfoRow label="Analysis" value={session.analysisStatus} />
-        {session.linkedAnalysisId && (
-          <InfoRow label="Analysis ID" value={`#${session.linkedAnalysisId}`} />
+        <InfoRow label="Date" value={session.session_date} />
+        <InfoRow label="Time" value={session.session_time} />
+        <InfoRow label="Mode" value={session.meeting_mode} />
+        <InfoRow label="Consent" value={session.consent_status} />
+        <InfoRow label="Status" value={session.session_status} />
+        <InfoRow label="Analysis" value={session.analysis_status} />
+        {session.linked_analysis_id && (
+          <InfoRow
+            label="Analysis ID"
+            value={`#${session.linked_analysis_id}`}
+          />
         )}
       </div>
     </div>
