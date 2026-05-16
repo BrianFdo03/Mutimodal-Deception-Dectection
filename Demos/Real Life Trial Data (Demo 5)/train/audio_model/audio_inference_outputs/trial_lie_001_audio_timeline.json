@@ -1,0 +1,164 @@
+{
+    "video_name": "trial_lie_001.mp4",
+    "audio_file": "d:\\NSBM\\3rd Year\\Final Year Project\\Product Development\\Github\\Mutimodal-Deception-Dectection\\Demos\\Real Life Trial Data (Demo 5)\\train\\audio_model\\temp_inference_audio\\trial_lie_001_audio.wav",
+    "overall_score": 0.05529991537332535,
+    "overall_risk": "low",
+    "risk_counts": {
+        "high": 0,
+        "medium": 0,
+        "low": 5
+    },
+    "metadata": {
+        "sample_rate": 16000,
+        "duration_seconds": 16.96,
+        "window_seconds": 5.0,
+        "stride_seconds": 2.5,
+        "num_windows": 5,
+        "model_path": "d:\\NSBM\\3rd Year\\Final Year Project\\Product Development\\Github\\Mutimodal-Deception-Dectection\\Demos\\Real Life Trial Data (Demo 5)\\train\\audio_model\\trained_audio_model\\final_audio_bilstm_model.keras",
+        "feature_count": 46,
+        "target_audio_frames": 100
+    },
+    "timeline": [
+        {
+            "window_index": 0,
+            "start": 0.0,
+            "end": 5.0,
+            "duration": 16.96,
+            "raw_score": 0.049160800874233246,
+            "smoothed_score": 0.050133153796195984,
+            "risk": "low",
+            "modality": "audio",
+            "explanation": {
+                "summary": "Low audio inconsistency was detected in this segment.",
+                "detail": "Low audio inconsistency was detected in this segment. Main contributing patterns include higher pitch activity, higher spectral envelope variation, rapid short-term acoustic changes.",
+                "main_factors": [
+                    "higher pitch activity",
+                    "higher spectral envelope variation",
+                    "rapid short-term acoustic changes"
+                ],
+                "feature_summary": {
+                    "mfcc_variation": 0.8078128099441528,
+                    "delta_mfcc_variation": 1.0186246633529663,
+                    "delta2_mfcc_variation": 1.009541630744934,
+                    "rms_activity": 0.38253074884414673,
+                    "zcr_activity": 0.6400269865989685,
+                    "spectral_activity": 0.7177247405052185,
+                    "pitch_activity": 0.8758781552314758,
+                    "voicing_activity": 0.7597677111625671
+                }
+            }
+        },
+        {
+            "window_index": 1,
+            "start": 2.5,
+            "end": 7.5,
+            "duration": 16.96,
+            "raw_score": 0.05110550671815872,
+            "smoothed_score": 0.05340576171875,
+            "risk": "low",
+            "modality": "audio",
+            "explanation": {
+                "summary": "Low audio inconsistency was detected in this segment.",
+                "detail": "Low audio inconsistency was detected in this segment. Main contributing patterns include higher spectral envelope variation, rapid short-term acoustic changes.",
+                "main_factors": [
+                    "higher spectral envelope variation",
+                    "rapid short-term acoustic changes"
+                ],
+                "feature_summary": {
+                    "mfcc_variation": 0.8337664008140564,
+                    "delta_mfcc_variation": 1.0741206407546997,
+                    "delta2_mfcc_variation": 1.0640108585357666,
+                    "rms_activity": 0.3761807680130005,
+                    "zcr_activity": 0.5987738966941833,
+                    "spectral_activity": 0.7609513401985168,
+                    "pitch_activity": 0.7950003743171692,
+                    "voicing_activity": 0.6164747476577759
+                }
+            }
+        },
+        {
+            "window_index": 2,
+            "start": 5.0,
+            "end": 10.0,
+            "duration": 16.96,
+            "raw_score": 0.059950970113277435,
+            "smoothed_score": 0.05930938944220543,
+            "risk": "low",
+            "modality": "audio",
+            "explanation": {
+                "summary": "Low audio inconsistency was detected in this segment.",
+                "detail": "Low audio inconsistency was detected in this segment. Main contributing patterns include higher spectral envelope variation, rapid short-term acoustic changes.",
+                "main_factors": [
+                    "higher spectral envelope variation",
+                    "rapid short-term acoustic changes"
+                ],
+                "feature_summary": {
+                    "mfcc_variation": 0.8301254510879517,
+                    "delta_mfcc_variation": 1.0692291259765625,
+                    "delta2_mfcc_variation": 0.9987791776657104,
+                    "rms_activity": 0.370962917804718,
+                    "zcr_activity": 0.6206758618354797,
+                    "spectral_activity": 0.7929539680480957,
+                    "pitch_activity": 0.7169331312179565,
+                    "voicing_activity": 0.6955394744873047
+                }
+            }
+        },
+        {
+            "window_index": 3,
+            "start": 7.5,
+            "end": 12.5,
+            "duration": 16.96,
+            "raw_score": 0.06687168776988983,
+            "smoothed_score": 0.05745069682598114,
+            "risk": "low",
+            "modality": "audio",
+            "explanation": {
+                "summary": "Low audio inconsistency was detected in this segment.",
+                "detail": "Low audio inconsistency was detected in this segment. Main contributing patterns include higher spectral envelope variation, rapid short-term acoustic changes.",
+                "main_factors": [
+                    "higher spectral envelope variation",
+                    "rapid short-term acoustic changes"
+                ],
+                "feature_summary": {
+                    "mfcc_variation": 0.831058919429779,
+                    "delta_mfcc_variation": 1.080031156539917,
+                    "delta2_mfcc_variation": 1.0590413808822632,
+                    "rms_activity": 0.37919455766677856,
+                    "zcr_activity": 0.6532009840011597,
+                    "spectral_activity": 0.7220185399055481,
+                    "pitch_activity": 0.6733330488204956,
+                    "voicing_activity": 0.6468608975410461
+                }
+            }
+        },
+        {
+            "window_index": 4,
+            "start": 10.0,
+            "end": 15.0,
+            "duration": 16.96,
+            "raw_score": 0.04552943632006645,
+            "smoothed_score": 0.05620056390762329,
+            "risk": "low",
+            "modality": "audio",
+            "explanation": {
+                "summary": "Low audio inconsistency was detected in this segment.",
+                "detail": "Low audio inconsistency was detected in this segment. Main contributing patterns include higher spectral envelope variation, rapid short-term acoustic changes.",
+                "main_factors": [
+                    "higher spectral envelope variation",
+                    "rapid short-term acoustic changes"
+                ],
+                "feature_summary": {
+                    "mfcc_variation": 0.8655627369880676,
+                    "delta_mfcc_variation": 1.1043046712875366,
+                    "delta2_mfcc_variation": 1.0741568803787231,
+                    "rms_activity": 0.34336045384407043,
+                    "zcr_activity": 0.7425913214683533,
+                    "spectral_activity": 0.7902002334594727,
+                    "pitch_activity": 0.792147696018219,
+                    "voicing_activity": 0.5812427401542664
+                }
+            }
+        }
+    ]
+}

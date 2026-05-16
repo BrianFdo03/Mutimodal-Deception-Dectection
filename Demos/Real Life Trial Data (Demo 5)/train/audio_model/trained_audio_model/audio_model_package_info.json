@@ -1,0 +1,41 @@
+{
+    "prepared_data_source": "/content/drive/MyDrive/datasets/demo5/prepared_audio_data",
+    "output_dir": "/content/drive/MyDrive/datasets/demo5/trained_audio_model",
+    "models_saved": {
+        "random_forest_baseline": "audio_random_forest_baseline.pkl",
+        "best_audio_bilstm": "best_audio_bilstm_model.keras",
+        "final_audio_bilstm": "final_audio_bilstm_model.keras"
+    },
+    "metrics_saved": {
+        "baseline_metrics": "audio_baseline_metrics.json",
+        "bilstm_metrics": "audio_bilstm_metrics.json",
+        "comparison": "audio_model_comparison.csv",
+        "training_history": "audio_bilstm_training_history.csv"
+    },
+    "feature_info": {
+        "sample_rate": 16000,
+        "window_seconds": 5.0,
+        "stride_seconds": 2.5,
+        "frame_length_seconds": 0.064,
+        "frame_hop_seconds": 0.05,
+        "target_audio_frames": 100,
+        "n_mfcc": 13,
+        "feature_count": 46,
+        "features": [
+            "mfcc_1_to_13",
+            "delta_mfcc_1_to_13",
+            "delta2_mfcc_1_to_13",
+            "rms",
+            "zero_crossing_rate",
+            "spectral_centroid",
+            "spectral_bandwidth",
+            "spectral_rolloff",
+            "pitch_f0",
+            "voicing_probability"
+        ],
+        "label_mapping": {
+            "truthful": 0,
+            "deceptive": 1
+        }
+    }
+}
