@@ -111,3 +111,55 @@ def delete_interview_session(db: Session, session_id: int):
     db.commit()
 
     return session
+
+
+def validate_candidate_session_access(
+    db: Session,
+    session_id: int,
+    token: str
+):
+    """
+    Validates whether a candidate-facing link is allowed to access
+    the requested interview session.
+    """
+
+    session = get_interview_session_by_id(
+        db=db,
+        session_id=session_id
+    )
+
+    if session is None:
+        return None
+
+    if session.candidate_join_token != token:
+        return None
+
+    return session
+
+
+def mark_candidate_consent_given(
+    db: Session,
+    session_id: int,
+    token: str
+):
+    """
+    Records candidate consent using the candidate-facing token.
+    """
+
+    session = validate_candidate_session_access(
+        db=db,
+        session_id=session_id,
+        token=token
+    )
+
+    if session is None:
+        return None
+
+    session.consent_status = "Given"
+    session.session_status = "Ready"
+    session.consent_given_at = datetime.now(timezone.utc)
+
+    db.commit()
+    db.refresh(session)
+
+    return session

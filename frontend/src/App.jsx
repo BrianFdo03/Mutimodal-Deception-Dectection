@@ -18,11 +18,21 @@ import SettingsPage from "./pages/SettingsPage";
 import ConsentPage from "./pages/ConsentPage";
 import MeetingRoomPage from "./pages/MeetingRoomPage";
 import ReportPreviewPage from "./pages/ReportPreviewPage";
+import CandidateConsentPage from "./pages/CandidateConsentPage";
+import CandidateMeetingPage from "./pages/CandidateMeetingPage";
 
 const router = createBrowserRouter([
   {
     path: "/login",
     element: <LoginPage />,
+  },
+  {
+    path: "/candidate-consent/:sessionId",
+    element: <CandidateConsentPage />,
+  },
+  {
+    path: "/candidate-meeting/:sessionId",
+    element: <CandidateMeetingPage />,
   },
   {
     path: "/",

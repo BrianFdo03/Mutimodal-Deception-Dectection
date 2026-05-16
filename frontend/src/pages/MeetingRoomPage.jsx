@@ -17,9 +17,9 @@ import {
 } from "lucide-react";
 
 // import { getSessionById, updateSession } from "../services/localDataService";
-
 import { getSessionById, updateSession } from "../services/sessionApi";
 
+import JitsiMeetingFrame from "../components/JitsiMeetingFrame";
 import { analyzeVideo } from "../services/videoAnalysisApi";
 
 export default function MeetingRoomPage() {
@@ -434,9 +434,9 @@ export default function MeetingRoomPage() {
           </h1>
 
           <p className="mt-2 max-w-3xl text-gray-600">
-            One-to-one interview session between one interviewer and one
-            candidate. The candidate video can be recorded and sent directly to
-            the analysis pipeline.
+            Conduct the live interview using the embedded meeting room. After
+            the session, upload the recording to generate the behavioral
+            inconsistency timeline and XAI report.
           </p>
         </div>
 
@@ -480,23 +480,28 @@ export default function MeetingRoomPage() {
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
         <div className="xl:col-span-2 space-y-6">
           <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <LiveCandidatePanel
-                title={session.candidate_name}
-                subtitle="Candidate / Interviewee"
-                initials={getInitials(session.candidate_name)}
-                localVideoRef={localVideoRef}
-                cameraReady={cameraReady}
-                isActive={meetingStarted && !meetingEnded}
-              />
+            <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <div>
+                <h2 className="text-xl font-bold text-gray-950">
+                  Live Interview Room
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-gray-600">
+                  This embedded Jitsi room allows the interviewer and candidate
+                  to join the same virtual interview session.
+                </p>
+              </div>
 
-              <InterviewerPanel
-                title="Demo Interviewer"
-                subtitle="HR Evaluator"
-                initials="DI"
-                isActive={meetingStarted && !meetingEnded}
-              />
+              <div className="rounded-full border border-gray-200 bg-gray-50 px-4 py-2 text-xs font-semibold text-gray-600">
+                Room: {session?.meeting_room_name || "N/A"}
+              </div>
             </div>
+
+            <JitsiMeetingFrame
+              roomName={session?.meeting_room_name}
+              displayName="Demo Interviewer"
+              role="interviewer"
+              height={620}
+            />
 
             <div className="mt-6 flex flex-wrap justify-center gap-3">
               {!cameraReady && (

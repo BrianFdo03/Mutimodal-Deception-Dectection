@@ -14,6 +14,8 @@ from backend.src.services.sessionService import (
     update_interview_session,
     mark_consent_given,
     delete_interview_session,
+    validate_candidate_session_access,
+    mark_candidate_consent_given,
 )
 
 router = APIRouter(
@@ -52,6 +54,28 @@ def serialize_session(session):
     }
 
 
+def add_candidate_links(data, request: Request, session):
+    """
+    Adds frontend candidate-facing URLs to the session response.
+
+    These URLs point to the React frontend, not the FastAPI backend.
+    """
+
+    frontend_base_url = "http://localhost:5173"
+
+    data["candidate_consent_url"] = (
+        f"{frontend_base_url}/candidate-consent/"
+        f"{session.session_id}?token={session.candidate_join_token}"
+    )
+
+    data["candidate_meeting_url"] = (
+        f"{frontend_base_url}/candidate-meeting/"
+        f"{session.session_id}?token={session.candidate_join_token}"
+    )
+
+    return data
+
+
 @router.post("/")
 def create_session_endpoint(
     session_data: SessionCreate,
@@ -62,10 +86,7 @@ def create_session_endpoint(
         session = create_interview_session(db, session_data)
 
         data = serialize_session(session)
-        data["candidate_consent_url"] = (
-            str(request.base_url)
-            + f"candidate-consent/{session.session_id}?token={session.candidate_join_token}"
-        )
+        data = add_candidate_links(data, request, session)
 
         return {
             "success": True,
@@ -78,6 +99,7 @@ def create_session_endpoint(
 
 @router.get("/")
 def get_sessions_endpoint(
+    request: Request,
     db: Session = Depends(get_db)
 ):
     sessions = get_all_interview_sessions(db)
@@ -85,7 +107,83 @@ def get_sessions_endpoint(
     return {
         "success": True,
         "count": len(sessions),
-        "data": [serialize_session(session) for session in sessions]
+        "data": [
+        add_candidate_links(
+            serialize_session(session),
+            request,
+            session
+        )
+        for session in sessions
+    ]
+    }
+
+
+@router.get("/{session_id}/candidate-access")
+def get_candidate_session_access_endpoint(
+    session_id: int,
+    token: str,
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    """
+    Candidate-facing endpoint.
+
+    Validates the candidate token and returns safe session details.
+    """
+
+    session = validate_candidate_session_access(
+        db=db,
+        session_id=session_id,
+        token=token
+    )
+
+    if session is None:
+        raise HTTPException(
+            status_code=403,
+            detail="Invalid or expired candidate session link."
+        )
+
+    data = serialize_session(session)
+    data = add_candidate_links(data, request, session)
+
+    return {
+        "success": True,
+        "data": data
+    }
+
+
+@router.patch("/{session_id}/candidate-consent")
+def mark_candidate_consent_endpoint(
+    session_id: int,
+    token: str,
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    """
+    Candidate-facing endpoint.
+
+    Records candidate consent after validating the candidate token.
+    """
+
+    session = mark_candidate_consent_given(
+        db=db,
+        session_id=session_id,
+        token=token
+    )
+
+    if session is None:
+        raise HTTPException(
+            status_code=403,
+            detail="Invalid or expired candidate session link."
+        )
+
+    data = serialize_session(session)
+    data = add_candidate_links(data, request, session)
+
+    return {
+        "success": True,
+        "message": "Candidate consent recorded successfully.",
+        "data": data
     }
 
 
@@ -101,10 +199,7 @@ def get_session_endpoint(
         raise HTTPException(status_code=404, detail="Interview session not found.")
 
     data = serialize_session(session)
-    data["candidate_consent_url"] = (
-        str(request.base_url)
-        + f"candidate-consent/{session.session_id}?token={session.candidate_join_token}"
-    )
+    data = add_candidate_links(data, request, session)
 
     return {
         "success": True,
