@@ -15,6 +15,33 @@ function getRiskBadgeClass(risk) {
   return "bg-green-100 text-green-700 border-green-200";
 }
 
+function normalizeHistoryItem(item) {
+  const timeline =
+    item.fusion_timeline_json ||
+    item.timeline_json ||
+    item.timeline ||
+    item.fusion?.timeline ||
+    [];
+
+  const safeTimeline = Array.isArray(timeline) ? timeline : [];
+
+  const videoFileExists =
+    item.video_file_exists ??
+    Boolean(item.video_url || item.uploaded_file_path);
+
+  return {
+    ...item,
+
+    analysis_id: item.analysis_id || item.id,
+
+    overall_score: item.fusion_overall_score ?? item.overall_score ?? 0,
+
+    overall_risk: item.fusion_overall_risk || item.overall_risk || "low",
+
+    video_file_exists: videoFileExists,
+  };
+}
+
 export default function AnalysisHistoryPage() {
   const navigate = useNavigate();
 
@@ -39,7 +66,8 @@ export default function AnalysisHistoryPage() {
         throw new Error("Failed to load analysis history.");
       }
 
-      setAnalyses(response.data || []);
+      const normalizedHistory = (response.data || []).map(normalizeHistoryItem);
+      setAnalyses(normalizedHistory);
     } catch (error) {
       console.error(error);
       setErrorMessage(
@@ -163,8 +191,6 @@ export default function AnalysisHistoryPage() {
                   <th className="py-3 px-6">Video</th>
                   <th className="py-3 px-6">Overall Score</th>
                   <th className="py-3 px-6">Risk</th>
-                  <th className="py-3 px-6">Segments</th>
-                  <th className="py-3 px-6">High / Medium</th>
                   <th className="py-3 px-6">Video File</th>
                   <th className="py-3 px-6">Created</th>
                   <th className="py-3 px-6">Action</th>
@@ -186,7 +212,10 @@ export default function AnalysisHistoryPage() {
                     </td>
 
                     <td className="py-4 px-6 font-semibold text-gray-900">
-                      {Number(item.overall_score).toFixed(2)}
+                      {item.overall_score !== null &&
+                      item.overall_score !== undefined
+                        ? Number(item.overall_score).toFixed(2)
+                        : "N/A"}
                     </td>
 
                     <td className="py-4 px-6">
@@ -195,20 +224,16 @@ export default function AnalysisHistoryPage() {
                           item.overall_risk,
                         )}`}
                       >
-                        {item.overall_risk?.toUpperCase()}
+                        {item.overall_risk
+                          ? item.overall_risk.toUpperCase()
+                          : "N/A"}
                       </span>
                     </td>
 
-                    <td className="py-4 px-6 text-gray-700">
-                      {item.segment_count}
-                    </td>
-
-                    <td className="py-4 px-6 text-gray-700">
-                      {item.high_risk_count} / {item.medium_risk_count}
-                    </td>
-
                     <td className="py-4 px-6">
-                      {item.video_file_exists ? (
+                      {item.video_file_exists ||
+                      item.video_url ||
+                      item.uploaded_file_path ? (
                         <span className="text-green-700 bg-green-50 border border-green-200 rounded-full px-2 py-1 text-xs font-semibold">
                           Available
                         </span>

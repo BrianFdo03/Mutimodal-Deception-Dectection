@@ -254,7 +254,17 @@ def get_video_analysis_by_id(db: Session, analysis_id: int):
     Gets saved video analysis result by ID.
     """
 
-    return db.query(VideoAnalysis).filter(VideoAnalysis.id == analysis_id).first()
+    # return db.query(VideoAnalysis).filter(VideoAnalysis.id == analysis_id).first()
+    analysis = (
+        db.query(VideoAnalysis)
+        .filter(VideoAnalysis.id == analysis_id)
+        .first()
+    )
+
+    if analysis is None:
+        return None
+
+    return serialize_video_analysis(analysis)
 
 
 def get_all_video_analyses(db: Session):
@@ -262,8 +272,115 @@ def get_all_video_analyses(db: Session):
     Gets all saved video analysis records, newest first.
     """
 
-    return (
+    analyses = (
         db.query(VideoAnalysis)
         .order_by(VideoAnalysis.created_at.desc())
         .all()
     )
+
+    history = []
+
+    for analysis in analyses:
+        video_url = None
+
+        if analysis.uploaded_file_path:
+            video_url = f"/uploads/{Path(analysis.uploaded_file_path).name}"
+
+        history.append({
+            "id": analysis.id,
+            "analysis_id": analysis.id,
+
+            "session_id": analysis.session_id,
+            "video_name": analysis.video_name,
+            "uploaded_file_path": analysis.uploaded_file_path,
+            "video_url": video_url,
+
+            "analysis_type": analysis.analysis_type,
+
+            "overall_score": analysis.overall_score,
+            "overall_risk": analysis.overall_risk,
+
+            "video_overall_score": analysis.video_overall_score,
+            "video_overall_risk": analysis.video_overall_risk,
+
+            "audio_overall_score": analysis.audio_overall_score,
+            "audio_overall_risk": analysis.audio_overall_risk,
+
+            "fusion_overall_score": analysis.fusion_overall_score,
+            "fusion_overall_risk": analysis.fusion_overall_risk,
+
+            "created_at": analysis.created_at,
+        })
+
+    return history
+
+
+def serialize_video_analysis(analysis):
+    return {
+        "id": analysis.id,
+        "analysis_id": analysis.id,
+
+        "session_id": analysis.session_id,
+        "video_name": analysis.video_name,
+        "uploaded_file_path": analysis.uploaded_file_path,
+        "video_url": f"/uploads/{Path(analysis.uploaded_file_path).name}"
+        if analysis.uploaded_file_path
+        else None,
+
+        "analysis_type": analysis.analysis_type,
+
+        # Main/default result
+        "overall_score": analysis.overall_score,
+        "overall_risk": analysis.overall_risk,
+        "metadata_json": analysis.metadata_json,
+        "timeline_json": analysis.timeline_json,
+
+        # Also keep old frontend-friendly aliases
+        "metadata": analysis.metadata_json,
+        "timeline": analysis.timeline_json,
+
+        # Video-specific result
+        "video_overall_score": analysis.video_overall_score,
+        "video_overall_risk": analysis.video_overall_risk,
+        "video_metadata_json": analysis.video_metadata_json,
+        "video_timeline_json": analysis.video_timeline_json,
+
+        # Audio-specific result
+        "audio_overall_score": analysis.audio_overall_score,
+        "audio_overall_risk": analysis.audio_overall_risk,
+        "audio_metadata_json": analysis.audio_metadata_json,
+        "audio_timeline_json": analysis.audio_timeline_json,
+
+        # Fusion-specific result
+        "fusion_overall_score": analysis.fusion_overall_score,
+        "fusion_overall_display_score": analysis.fusion_overall_display_score,
+        "fusion_overall_risk": analysis.fusion_overall_risk,
+        "fusion_metadata_json": analysis.fusion_metadata_json,
+        "fusion_timeline_json": analysis.fusion_timeline_json,
+
+        # Full package
+        "analysis_result_json": analysis.analysis_result_json,
+
+        # Nested frontend-friendly result
+        "video": {
+            "overall_score": analysis.video_overall_score,
+            "overall_risk": analysis.video_overall_risk,
+            "metadata": analysis.video_metadata_json,
+            "timeline": analysis.video_timeline_json,
+        },
+        "audio": {
+            "overall_score": analysis.audio_overall_score,
+            "overall_risk": analysis.audio_overall_risk,
+            "metadata": analysis.audio_metadata_json,
+            "timeline": analysis.audio_timeline_json,
+        },
+        "fusion": {
+            "overall_score": analysis.fusion_overall_score,
+            "overall_display_score": analysis.fusion_overall_display_score,
+            "overall_risk": analysis.fusion_overall_risk,
+            "metadata": analysis.fusion_metadata_json,
+            "timeline": analysis.fusion_timeline_json,
+        },
+
+        "created_at": analysis.created_at,
+    }
