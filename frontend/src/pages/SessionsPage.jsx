@@ -117,34 +117,6 @@ export default function SessionsPage() {
       );
     }
   }
-
-  async function handleDeleteSession(sessionId) {
-    const confirmed = window.confirm(
-      "Are you sure you want to delete this interview session?",
-    );
-
-    if (!confirmed) {
-      return;
-    }
-
-    try {
-      setErrorMessage("");
-
-      await deleteSessionById(sessionId);
-
-      setSessions((currentSessions) =>
-        currentSessions.filter(
-          (session) => String(session.session_id) !== String(sessionId),
-        ),
-      );
-    } catch (error) {
-      console.error(error);
-      setErrorMessage(
-        error?.response?.data?.detail ||
-          "Something went wrong while deleting the session.",
-      );
-    }
-  }
   // async function handleDeleteSession(sessionId) {
   //   const confirmed = window.confirm(
   //     "Are you sure you want to delete this interview session?",
@@ -332,8 +304,17 @@ export default function SessionsPage() {
                       />
                     </td>
 
-                    <td className="px-6 py-4 text-gray-700">
-                      {session.analysis_status}
+                    <td className="px-6 py-4">
+                      <StatusBadge
+                        label={session.analysis_status}
+                        type={
+                          session.analysis_status === "Analyzed"
+                            ? "success"
+                            : session.analysis_status === "Ready for Analysis"
+                              ? "info"
+                              : "warning"
+                        }
+                      />
                     </td>
 
                     <td className="px-6 py-4">
@@ -401,6 +382,32 @@ export default function SessionsPage() {
                             >
                               Copy Meeting
                             </button>
+                          )}
+
+                          {session.linked_analysis_id && (
+                            <>
+                              <button
+                                onClick={() =>
+                                  navigate(
+                                    `/saved-analysis?id=${session.linked_analysis_id}`,
+                                  )
+                                }
+                                className={getActionButtonClass("success")}
+                              >
+                                Open Analysis
+                              </button>
+
+                              <button
+                                onClick={() =>
+                                  navigate(
+                                    `/report/${session.linked_analysis_id}`,
+                                  )
+                                }
+                                className={getActionButtonClass("info")}
+                              >
+                                Report
+                              </button>
+                            </>
                           )}
 
                           <button

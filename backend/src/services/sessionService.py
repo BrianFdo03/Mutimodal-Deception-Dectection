@@ -163,3 +163,31 @@ def mark_candidate_consent_given(
     db.refresh(session)
 
     return session
+
+
+def link_analysis_to_session(
+    db: Session,
+    session_id: int,
+    analysis_id: int
+):
+    """
+    Links a completed analysis result to an interview session.
+    """
+
+    session = get_interview_session_by_id(
+        db=db,
+        session_id=session_id
+    )
+
+    if session is None:
+        return None
+
+    session.linked_analysis_id = analysis_id
+    session.analysis_status = "Analyzed"
+    session.session_status = "Analyzed"
+    session.completed_at = session.completed_at or datetime.now(timezone.utc)
+
+    db.commit()
+    db.refresh(session)
+
+    return session

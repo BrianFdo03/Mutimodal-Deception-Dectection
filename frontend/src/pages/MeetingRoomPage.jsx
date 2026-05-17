@@ -367,7 +367,7 @@ export default function MeetingRoomPage() {
         },
       );
 
-      const response = await analyzeVideo(recordedFile);
+      const response = await analyzeVideo(recordedFile, sessionId);
 
       if (!response.success) {
         throw new Error(response.message || "Video analysis failed.");
@@ -380,11 +380,6 @@ export default function MeetingRoomPage() {
         linked_analysis_id: analysisId,
         session_status: "Analyzed",
       });
-      // updateSession(sessionId, {
-      //   analysisStatus: "Analyzed",
-      //   linkedAnalysisId: analysisId,
-      //   sessionStatus: "Analyzed",
-      // });
 
       navigate(`/saved-analysis?id=${analysisId}`);
     } catch (error) {
