@@ -104,6 +104,11 @@ backend/.pyre/
 backend/uploads/*
 backend/storage/inference_outputs/*
 
+backend/ml/temp_audio/*
+
 # optional: avoid committing large model files
 backend/ml/video/model/*.keras
 backend/ml/video/mediapipe_models/*.task
+
+backend/ml/audio/model/*.keras
+backend/ml/audio/mediapipe_models/*.task
