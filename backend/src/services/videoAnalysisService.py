@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from backend.ml.video.predict_timeline import predict_video_timeline
 from backend.ml.audio.predict_timeline import predict_audio_timeline
 from backend.ml.fusion.fuse_timelines import fuse_video_audio_timelines
+from backend.src.services.sessionService import link_analysis_to_session
 
 from backend.src.models.videoAnalysisModel import VideoAnalysis
 
@@ -208,12 +209,23 @@ def analyze_uploaded_video(
         session_id=session_id
     )
 
+    linked_session = None
+
+    if session_id is not None:
+        linked_session = link_analysis_to_session(
+            db=db,
+            session_id=session_id,
+            analysis_id=saved_analysis.id
+        )
+
     # 7. Return frontend-friendly response
     return {
         "analysis_id": saved_analysis.id,
         "session_id": saved_analysis.session_id,
-        "video_name": saved_analysis.video_name,
+        "session_linked": linked_session is not None,
+        "linked_analysis_id": saved_analysis.id if linked_session else None,
 
+        "video_name": saved_analysis.video_name,
         "analysis_type": saved_analysis.analysis_type,
 
         # Main result = fusion result
