@@ -1,6 +1,8 @@
 import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+import { Loader2 } from "lucide-react";
+
 import { analyzeVideo } from "../services/videoAnalysisApi";
 
 import VideoUploadCard from "../components/VideoUploadCard";
@@ -183,6 +185,7 @@ export default function VideoAnalysisDashboard() {
     try {
       setIsLoading(true);
       setErrorMessage("");
+      setAnalysis(null);
 
       const response = await analyzeVideo(selectedFile);
 
@@ -253,21 +256,6 @@ export default function VideoAnalysisDashboard() {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* {analysis && (
-          <div className="mt-6 rounded-2xl border border-blue-100 bg-blue-50 p-5 text-sm text-blue-800">
-            <p className="font-semibold text-blue-950">
-              Multimodal analysis completed
-            </p>
-            <p className="mt-2 leading-6">
-              The uploaded interview was processed through the visual facial
-              landmark model, the audio acoustic model, and a weighted fusion
-              layer. The preview below shows the fused timeline. Open the full
-              saved analysis to inspect Fusion, Video, and Audio timelines
-              separately.
-            </p>
-          </div>
-        )} */}
-
         <div className="space-y-6">
           <VideoUploadCard
             selectedFile={selectedFile}
@@ -340,9 +328,12 @@ export default function VideoAnalysisDashboard() {
         </div>
       </div>
 
-      {analysis && (
+      {analysis && !isLoading && (
         <div className="mt-6 rounded-2xl border border-blue-100 bg-blue-50 p-5 text-sm text-blue-800">
           <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-sm">
+              <Loader2 className="animate-spin text-blue-700" size={30} />
+            </div>
             <div>
               <p className="font-semibold text-blue-950">
                 Multimodal analysis completed
@@ -369,27 +360,38 @@ export default function VideoAnalysisDashboard() {
         </div>
       )}
 
-      <div className="mt-6">
-        <AnalysisSummaryCards analysis={analysis} />
-      </div>
+      {analysis && !isLoading && (
+        <>
+          <div className="mt-6">
+            <AnalysisSummaryCards analysis={analysis} />
+          </div>
 
-      <div className="mt-6">
-        <div className="mb-4">
-          <h2 className="text-xl font-bold text-gray-950">
-            Fusion Timeline Preview
-          </h2>
-          <p className="mt-1 text-sm text-gray-600">
-            This preview shows the fused multimodal timeline. Detailed
-            modality-specific timelines are available in the saved analysis
-            view.
-          </p>
-        </div>
+          <div className="mt-6">
+            <div className="mb-4">
+              <h2 className="text-xl font-bold text-gray-950">
+                Fusion Timeline Preview
+              </h2>
+              <p className="mt-1 text-sm text-gray-600">
+                This preview shows the fused multimodal timeline. Detailed
+                modality-specific timelines are available in the saved analysis
+                view.
+              </p>
+            </div>
 
-        <InconsistencyTimeline
-          timeline={fusionTimeline}
-          onSegmentClick={handleSegmentClick}
-        />
-      </div>
+            <InconsistencyTimeline
+              timeline={fusionTimeline}
+              onSegmentClick={handleSegmentClick}
+            />
+          </div>
+
+          <div className="mt-6">
+            <FlaggedSegmentsTable
+              timeline={flaggedFusionSegments}
+              onSegmentClick={handleSegmentClick}
+            />
+          </div>
+        </>
+      )}
 
       <div className="mt-6">
         <FlaggedSegmentsTable

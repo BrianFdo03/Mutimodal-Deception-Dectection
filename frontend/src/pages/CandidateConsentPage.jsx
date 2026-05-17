@@ -336,7 +336,7 @@ function CandidatePageShell({ children }) {
       <header className="border-b border-gray-200 bg-white">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
           <div>
-            <h1 className="text-lg font-bold text-gray-950">recruitAI</h1>
+            <h1 className="text-lg font-bold text-gray-950">RecruitAI</h1>
             <p className="text-xs text-gray-500">
               Interview Integrity Assistant
             </p>
