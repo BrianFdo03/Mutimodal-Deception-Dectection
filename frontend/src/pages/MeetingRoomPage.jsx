@@ -16,7 +16,6 @@ import {
   Video,
 } from "lucide-react";
 
-// import { getSessionById, updateSession } from "../services/localDataService";
 import { getSessionById, updateSession } from "../services/sessionApi";
 
 import JitsiMeetingFrame from "../components/JitsiMeetingFrame";
@@ -45,6 +44,7 @@ export default function MeetingRoomPage() {
   const [recordedVideoUrl, setRecordedVideoUrl] = useState("");
 
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [completedAnalysisId, setCompletedAnalysisId] = useState(null);
 
   useEffect(() => {
     return () => {
@@ -95,6 +95,7 @@ export default function MeetingRoomPage() {
 
       setSession(loadedSession);
       setInterviewNotes(loadedSession.meeting_notes || "");
+      setCompletedAnalysisId(loadedSession.linked_analysis_id || null);
       setMeetingEnded(
         loadedSession.session_status === "Completed" ||
           loadedSession.session_status === "Analyzed",
@@ -355,6 +356,16 @@ export default function MeetingRoomPage() {
       return;
     }
 
+    if (session?.linked_analysis_id) {
+      const confirmed = window.confirm(
+        "This session already has a linked analysis. Running analysis again will create a new analysis record and replace the linked analysis for this session. Do you want to continue?",
+      );
+
+      if (!confirmed) {
+        return;
+      }
+    }
+
     try {
       setIsAnalyzing(true);
       setErrorMessage("");
@@ -380,6 +391,15 @@ export default function MeetingRoomPage() {
         linked_analysis_id: analysisId,
         session_status: "Analyzed",
       });
+
+      setCompletedAnalysisId(analysisId);
+
+      setSession((currentSession) => ({
+        ...currentSession,
+        analysis_status: "Analyzed",
+        linked_analysis_id: analysisId,
+        session_status: "Analyzed",
+      }));
 
       navigate(`/saved-analysis?id=${analysisId}`);
     } catch (error) {
@@ -430,8 +450,9 @@ export default function MeetingRoomPage() {
 
           <p className="mt-2 max-w-3xl text-gray-600">
             Conduct the live interview using the embedded meeting room. After
-            the session, upload the recording to generate the behavioral
-            inconsistency timeline and XAI report.
+            the session, recorded interview media can be analyzed through the
+            multimodal pipeline and linked back to this session for review and
+            reporting.
           </p>
         </div>
 
@@ -458,7 +479,7 @@ export default function MeetingRoomPage() {
         </div>
       )}
 
-      {meetingEnded && (
+      {meetingEnded && !completedAnalysisId && (
         <div className="mb-6 rounded-2xl border border-green-200 bg-green-50 p-5 text-green-800">
           <div className="flex items-start gap-3">
             <CheckCircle2 size={22} className="mt-0.5" />
@@ -467,6 +488,43 @@ export default function MeetingRoomPage() {
               <p className="mt-1 text-sm">
                 This session is ready for analysis if a recording is available.
               </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {completedAnalysisId && (
+        <div className="mb-6 rounded-2xl border border-green-200 bg-green-50 p-5 text-green-800">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex items-start gap-3">
+              <CheckCircle2 size={22} className="mt-0.5" />
+
+              <div>
+                <p className="font-semibold">Analysis completed successfully</p>
+                <p className="mt-1 text-sm">
+                  This interview session is linked to analysis #
+                  {completedAnalysisId}. You can review the multimodal timeline
+                  or open the generated report.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-3">
+              <button
+                onClick={() =>
+                  navigate(`/saved-analysis?id=${completedAnalysisId}`)
+                }
+                className="rounded-xl bg-green-700 px-5 py-3 text-sm font-semibold text-white hover:bg-green-800"
+              >
+                Open Analysis
+              </button>
+
+              <button
+                onClick={() => navigate(`/report/${completedAnalysisId}`)}
+                className="rounded-xl border border-green-300 bg-white px-5 py-3 text-sm font-semibold text-green-800 hover:bg-green-100"
+              >
+                Open Report
+              </button>
             </div>
           </div>
         </div>
@@ -598,9 +656,10 @@ export default function MeetingRoomPage() {
                 </div>
 
                 <button
+                  type="button"
                   onClick={analyzeRecordedInterview}
                   disabled={isAnalyzing}
-                  className={`inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold ${
+                  className={`inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold transition ${
                     isAnalyzing
                       ? "bg-gray-300 text-gray-600 cursor-not-allowed"
                       : "bg-gray-950 text-white hover:bg-gray-800"
@@ -609,7 +668,12 @@ export default function MeetingRoomPage() {
                   {isAnalyzing ? (
                     <>
                       <Loader2 size={18} className="animate-spin" />
-                      Analyzing...
+                      Running Multimodal Analysis...
+                    </>
+                  ) : completedAnalysisId ? (
+                    <>
+                      <Upload size={18} />
+                      Re-analyze Recording
                     </>
                   ) : (
                     <>
@@ -672,24 +736,35 @@ export default function MeetingRoomPage() {
         <div className="space-y-6">
           <SessionInfoCard session={session} />
 
-          {session.linked_analysis_id && (
+          {completedAnalysisId && (
             <div className="rounded-2xl border border-green-200 bg-green-50 p-6">
               <h2 className="text-lg font-semibold text-green-950">
                 Analysis Available
               </h2>
+
               <p className="mt-2 text-sm leading-6 text-green-800">
-                This session has already been analyzed. You can open the saved
-                timeline and report.
+                This session has already been analyzed and linked to analysis #
+                {completedAnalysisId}. You can open the saved timeline or
+                report.
               </p>
 
-              <button
-                onClick={() =>
-                  navigate(`/saved-analysis?id=${session.linked_analysis_id}`)
-                }
-                className="mt-4 rounded-xl bg-green-700 px-5 py-3 text-sm font-semibold text-white hover:bg-green-800"
-              >
-                Open Analysis
-              </button>
+              <div className="mt-4 flex flex-col gap-3">
+                <button
+                  onClick={() =>
+                    navigate(`/saved-analysis?id=${completedAnalysisId}`)
+                  }
+                  className="rounded-xl bg-green-700 px-5 py-3 text-sm font-semibold text-white hover:bg-green-800"
+                >
+                  Open Analysis
+                </button>
+
+                <button
+                  onClick={() => navigate(`/report/${completedAnalysisId}`)}
+                  className="rounded-xl border border-green-300 bg-white px-5 py-3 text-sm font-semibold text-green-800 hover:bg-green-100"
+                >
+                  Open Report
+                </button>
+              </div>
             </div>
           )}
 
@@ -698,9 +773,9 @@ export default function MeetingRoomPage() {
               Recording Workflow
             </h2>
             <p className="mt-2 text-sm leading-6 text-blue-800">
-              This demo records the candidate/interviewer media stream in the
-              browser. The resulting recording is sent to the existing FastAPI
-              analysis endpoint.
+              This demo records the local browser media stream and sends the
+              resulting recording to the FastAPI multimodal analysis endpoint.
+              The completed result is linked back to this interview session.
             </p>
           </div>
 
