@@ -18,7 +18,7 @@ def create_interview_session(db: Session, session_data: SessionCreate):
     if candidate is None:
         raise ValueError("Candidate not found.")
 
-    meeting_room_name = f"veriview-session-{uuid4().hex[:12]}"
+    meeting_room_name = f"recruitAI-session-{uuid4().hex[:12]}"
     candidate_join_token = uuid4().hex
 
     session = InterviewSession(
