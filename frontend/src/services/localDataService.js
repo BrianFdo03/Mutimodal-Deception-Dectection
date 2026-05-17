@@ -1,5 +1,5 @@
-const CANDIDATES_KEY = "veriview_candidates";
-const SESSIONS_KEY = "veriview_sessions";
+const CANDIDATES_KEY = "recruitAI_candidates";
+const SESSIONS_KEY = "recruitAI_sessions";
 
 function readFromStorage(key, fallbackValue = []) {
   try {

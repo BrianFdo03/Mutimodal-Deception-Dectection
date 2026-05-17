@@ -39,7 +39,7 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <h1 className="text-xl font-bold">VeriView</h1>
+              <h1 className="text-xl font-bold">recruitAI</h1>
               <p className="text-sm text-gray-300">
                 Interview Integrity Assistant
               </p>

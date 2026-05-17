@@ -15,6 +15,270 @@ import { getCandidateById, getSessions } from "../services/localDataService";
 
 import RiskBadge from "../components/RiskBadge";
 
+function ensureArray(value) {
+  if (Array.isArray(value)) {
+    return value;
+  }
+
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+
+  return [];
+}
+
+function ensureObject(value) {
+  if (!value) {
+    return {};
+  }
+
+  if (typeof value === "object") {
+    return value;
+  }
+
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value);
+      return parsed && typeof parsed === "object" ? parsed : {};
+    } catch {
+      return {};
+    }
+  }
+
+  return {};
+}
+
+function normalizeTimelineItem(item, modality = "fusion") {
+  const start = item.start ?? item.start_time ?? item.startTime ?? 0;
+  const end = item.end ?? item.end_time ?? item.endTime ?? start;
+
+  let score = 0;
+  let rawScore = 0;
+  let smoothedScore = 0;
+
+  if (modality === "fusion") {
+    rawScore =
+      item.raw_fusion_score ??
+      item.fusion_score ??
+      item.raw_score ??
+      item.score ??
+      0;
+
+    smoothedScore =
+      item.smoothed_fusion_score ??
+      item.display_score ??
+      item.fusion_score ??
+      rawScore;
+
+    score = smoothedScore;
+  } else {
+    rawScore = item.raw_score ?? item.score ?? item.deception_score ?? 0;
+
+    smoothedScore =
+      item.smoothed_score ?? item.display_score ?? item.score ?? rawScore;
+
+    score = smoothedScore;
+  }
+
+  return {
+    ...item,
+    start,
+    end,
+    startTime: start,
+    endTime: end,
+    score,
+    rawScore,
+    smoothedScore,
+    raw_score: rawScore,
+    smoothed_score: smoothedScore,
+    display_score: score,
+    risk: item.risk || "low",
+    modality,
+    explanation: item.explanation || null,
+  };
+}
+
+function normalizeTimeline(timeline, modality) {
+  return ensureArray(timeline).map((item) =>
+    normalizeTimelineItem(item, modality),
+  );
+}
+
+function getTimelineFromRawAnalysis(rawAnalysis, type) {
+  if (type === "fusion") {
+    return ensureArray(
+      rawAnalysis.fusion_timeline_json ||
+        rawAnalysis.timeline_json ||
+        rawAnalysis.timeline ||
+        rawAnalysis.fusion?.timeline ||
+        rawAnalysis.analysis_result_json?.fusion?.timeline ||
+        [],
+    );
+  }
+
+  if (type === "video") {
+    return ensureArray(
+      rawAnalysis.video_timeline_json ||
+        rawAnalysis.video?.timeline ||
+        rawAnalysis.analysis_result_json?.video?.timeline ||
+        [],
+    );
+  }
+
+  if (type === "audio") {
+    return ensureArray(
+      rawAnalysis.audio_timeline_json ||
+        rawAnalysis.audio?.timeline ||
+        rawAnalysis.analysis_result_json?.audio?.timeline ||
+        [],
+    );
+  }
+
+  return [];
+}
+
+function getMetadataFromRawAnalysis(rawAnalysis, type) {
+  if (type === "fusion") {
+    return ensureObject(
+      rawAnalysis.fusion_metadata_json ||
+        rawAnalysis.metadata_json ||
+        rawAnalysis.metadata ||
+        rawAnalysis.fusion?.metadata ||
+        rawAnalysis.analysis_result_json?.fusion?.metadata ||
+        {},
+    );
+  }
+
+  if (type === "video") {
+    return ensureObject(
+      rawAnalysis.video_metadata_json ||
+        rawAnalysis.video?.metadata ||
+        rawAnalysis.analysis_result_json?.video?.metadata ||
+        {},
+    );
+  }
+
+  if (type === "audio") {
+    return ensureObject(
+      rawAnalysis.audio_metadata_json ||
+        rawAnalysis.audio?.metadata ||
+        rawAnalysis.analysis_result_json?.audio?.metadata ||
+        {},
+    );
+  }
+
+  return {};
+}
+
+function getScoreFromRawAnalysis(rawAnalysis, type) {
+  if (type === "fusion") {
+    return {
+      overall_score:
+        rawAnalysis.fusion_overall_score ??
+        rawAnalysis.fusion?.overall_score ??
+        rawAnalysis.overall_score ??
+        0,
+      overall_display_score:
+        rawAnalysis.fusion_overall_display_score ??
+        rawAnalysis.fusion?.overall_display_score ??
+        rawAnalysis.fusion_overall_score ??
+        rawAnalysis.fusion?.overall_score ??
+        rawAnalysis.overall_score ??
+        0,
+      overall_risk:
+        rawAnalysis.fusion_overall_risk ||
+        rawAnalysis.fusion?.overall_risk ||
+        rawAnalysis.overall_risk ||
+        "low",
+    };
+  }
+
+  if (type === "video") {
+    return {
+      overall_score:
+        rawAnalysis.video_overall_score ??
+        rawAnalysis.video?.overall_score ??
+        0,
+      overall_risk:
+        rawAnalysis.video_overall_risk ||
+        rawAnalysis.video?.overall_risk ||
+        "low",
+    };
+  }
+
+  if (type === "audio") {
+    return {
+      overall_score:
+        rawAnalysis.audio_overall_score ??
+        rawAnalysis.audio?.overall_score ??
+        0,
+      overall_risk:
+        rawAnalysis.audio_overall_risk ||
+        rawAnalysis.audio?.overall_risk ||
+        "low",
+    };
+  }
+
+  return {
+    overall_score: 0,
+    overall_risk: "low",
+  };
+}
+
+function normalizeReportAnalysis(rawAnalysis) {
+  const fusionTimeline = normalizeTimeline(
+    getTimelineFromRawAnalysis(rawAnalysis, "fusion"),
+    "fusion",
+  );
+
+  const videoTimeline = normalizeTimeline(
+    getTimelineFromRawAnalysis(rawAnalysis, "video"),
+    "video",
+  );
+
+  const audioTimeline = normalizeTimeline(
+    getTimelineFromRawAnalysis(rawAnalysis, "audio"),
+    "audio",
+  );
+
+  return {
+    ...rawAnalysis,
+
+    analysis_id: rawAnalysis.analysis_id || rawAnalysis.id,
+
+    timelines: {
+      fusion: fusionTimeline,
+      video: videoTimeline,
+      audio: audioTimeline,
+    },
+
+    scores: {
+      fusion: getScoreFromRawAnalysis(rawAnalysis, "fusion"),
+      video: getScoreFromRawAnalysis(rawAnalysis, "video"),
+      audio: getScoreFromRawAnalysis(rawAnalysis, "audio"),
+    },
+
+    metadataByType: {
+      fusion: getMetadataFromRawAnalysis(rawAnalysis, "fusion"),
+      video: getMetadataFromRawAnalysis(rawAnalysis, "video"),
+      audio: getMetadataFromRawAnalysis(rawAnalysis, "audio"),
+    },
+
+    // Main report result = fusion result
+    overall_score:
+      getScoreFromRawAnalysis(rawAnalysis, "fusion").overall_score ?? 0,
+    overall_risk:
+      getScoreFromRawAnalysis(rawAnalysis, "fusion").overall_risk || "low",
+    timeline: fusionTimeline,
+    metadata: getMetadataFromRawAnalysis(rawAnalysis, "fusion"),
+  };
+}
+
 export default function ReportPreviewPage() {
   const { analysisId } = useParams();
   const navigate = useNavigate();
@@ -40,7 +304,7 @@ export default function ReportPreviewPage() {
         throw new Error("Could not load analysis report.");
       }
 
-      const loadedAnalysis = response.data;
+      const loadedAnalysis = normalizeReportAnalysis(response.data);
       setAnalysis(loadedAnalysis);
 
       const sessions = getSessions();
@@ -72,30 +336,22 @@ export default function ReportPreviewPage() {
   }
 
   const reportStats = useMemo(() => {
-    if (!analysis?.timeline) {
-      return {
-        totalSegments: 0,
-        highRiskSegments: [],
-        mediumRiskSegments: [],
-        lowRiskSegments: [],
-        reviewSegments: [],
-      };
-    }
+    const fusionTimeline = analysis?.timelines?.fusion || [];
 
-    const highRiskSegments = analysis.timeline.filter(
+    const highRiskSegments = fusionTimeline.filter(
       (segment) => segment.risk === "high",
     );
 
-    const mediumRiskSegments = analysis.timeline.filter(
+    const mediumRiskSegments = fusionTimeline.filter(
       (segment) => segment.risk === "medium",
     );
 
-    const lowRiskSegments = analysis.timeline.filter(
+    const lowRiskSegments = fusionTimeline.filter(
       (segment) => segment.risk === "low",
     );
 
     return {
-      totalSegments: analysis.timeline.length,
+      totalSegments: fusionTimeline.length,
       highRiskSegments,
       mediumRiskSegments,
       lowRiskSegments,
@@ -163,13 +419,15 @@ export default function ReportPreviewPage() {
         <div className="border-t border-gray-200 p-8">
           <section className="grid grid-cols-1 gap-4 md:grid-cols-4">
             <SummaryCard
-              label="Overall Risk"
-              value={<RiskBadge risk={analysis.overall_risk} />}
+              label="Fusion Risk"
+              value={<RiskBadge risk={analysis.scores?.fusion?.overall_risk} />}
             />
 
             <SummaryCard
-              label="Overall Score"
-              value={Number(analysis.overall_score || 0).toFixed(2)}
+              label="Fusion Score"
+              value={Number(
+                analysis.scores?.fusion?.overall_score || 0,
+              ).toFixed(2)}
             />
 
             <SummaryCard
@@ -181,6 +439,47 @@ export default function ReportPreviewPage() {
               label="Review Segments"
               value={reportStats.reviewSegments.length}
             />
+          </section>
+
+          <section className="mt-8">
+            <div className="mb-4 flex items-center gap-3">
+              <div className="rounded-xl bg-gray-100 p-3 text-gray-700">
+                <ShieldCheck size={22} />
+              </div>
+
+              <div>
+                <h2 className="text-xl font-bold text-gray-950">
+                  Multimodal Result Breakdown
+                </h2>
+                <p className="text-sm text-gray-500">
+                  Fusion is used as the primary report result, with video and
+                  audio shown as supporting modality outputs.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              <ModalityScoreCard
+                label="Fusion Result"
+                description="Combined video + audio score"
+                score={analysis.scores?.fusion?.overall_score}
+                risk={analysis.scores?.fusion?.overall_risk}
+              />
+
+              <ModalityScoreCard
+                label="Video Model"
+                description="Facial landmark movement analysis"
+                score={analysis.scores?.video?.overall_score}
+                risk={analysis.scores?.video?.overall_risk}
+              />
+
+              <ModalityScoreCard
+                label="Audio Model"
+                description="Vocal acoustic feature analysis"
+                score={analysis.scores?.audio?.overall_score}
+                risk={analysis.scores?.audio?.overall_risk}
+              />
+            </div>
           </section>
 
           <section className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -222,7 +521,8 @@ export default function ReportPreviewPage() {
                     <tr className="border-b border-gray-200 bg-gray-50 text-left text-gray-500">
                       <th className="px-5 py-3">Time Range</th>
                       <th className="px-5 py-3">Risk</th>
-                      <th className="px-5 py-3">Score</th>
+                      <th className="px-5 py-3">Fusion Score</th>
+                      <th className="px-5 py-3">Video / Audio</th>
                       <th className="px-5 py-3">XAI Explanation</th>
                     </tr>
                   </thead>
@@ -244,8 +544,36 @@ export default function ReportPreviewPage() {
 
                         <td className="px-5 py-4 font-semibold text-gray-950">
                           {Number(
-                            segment.smoothed_score ?? segment.raw_score ?? 0,
+                            segment.display_score ??
+                              segment.smoothed_fusion_score ??
+                              segment.raw_fusion_score ??
+                              segment.score ??
+                              0,
                           ).toFixed(2)}
+                        </td>
+
+                        <td className="px-5 py-4 text-gray-700">
+                          <p>
+                            Video:{" "}
+                            <span className="font-semibold">
+                              {getSegmentVideoScore(segment) !== null
+                                ? Number(getSegmentVideoScore(segment)).toFixed(
+                                    2,
+                                  )
+                                : "N/A"}
+                            </span>
+                          </p>
+
+                          <p className="mt-1">
+                            Audio:{" "}
+                            <span className="font-semibold">
+                              {getSegmentAudioScore(segment) !== null
+                                ? Number(getSegmentAudioScore(segment)).toFixed(
+                                    2,
+                                  )
+                                : "N/A"}
+                            </span>
+                          </p>
                         </td>
 
                         <td className="px-5 py-4 text-gray-700">
@@ -254,6 +582,36 @@ export default function ReportPreviewPage() {
                               segment.explanation?.summary ||
                               "No explanation available for this segment."}
                           </p>
+
+                          {segment.explanation?.video_factors?.length > 0 && (
+                            <div className="mt-2">
+                              <p className="text-xs font-semibold text-gray-500">
+                                Visual factors
+                              </p>
+                              <ul className="mt-1 list-disc space-y-1 pl-5 text-gray-600">
+                                {segment.explanation.video_factors.map(
+                                  (factor) => (
+                                    <li key={factor}>{factor}</li>
+                                  ),
+                                )}
+                              </ul>
+                            </div>
+                          )}
+
+                          {segment.explanation?.audio_factors?.length > 0 && (
+                            <div className="mt-2">
+                              <p className="text-xs font-semibold text-gray-500">
+                                Audio factors
+                              </p>
+                              <ul className="mt-1 list-disc space-y-1 pl-5 text-gray-600">
+                                {segment.explanation.audio_factors.map(
+                                  (factor) => (
+                                    <li key={factor}>{factor}</li>
+                                  ),
+                                )}
+                              </ul>
+                            </div>
+                          )}
 
                           {segment.explanation?.main_factors?.length > 0 && (
                             <ul className="mt-2 list-disc space-y-1 pl-5 text-gray-600">
@@ -322,10 +680,11 @@ export default function ReportPreviewPage() {
 
           <section className="mt-8 border-t border-gray-200 pt-6">
             <p className="text-xs leading-6 text-gray-500">
-              Generated by VeriView Interview Integrity Assistant. This report
-              is intended for internal human review and should not be
-              interpreted as proof of deception or used as the sole basis for
-              hiring decisions.
+              Generated by RecruitAI Interview Integrity Assistant. This
+              multimodal report combines visual, audio, and fusion-based
+              behavioral inconsistency outputs. It is intended for internal
+              human review and should not be interpreted as proof of deception
+              or used as the sole basis for hiring decisions.
             </p>
           </section>
         </div>
@@ -355,9 +714,9 @@ function ReportHeader({ analysis }) {
           </div>
 
           <p className="mt-6 max-w-3xl text-sm leading-6 text-gray-600">
-            This report summarizes video-based behavioral inconsistency
-            analysis, timeline flags, and explainable AI outputs generated for
-            interviewer review.
+            This report summarizes multimodal behavioral inconsistency analysis
+            using visual facial-landmark patterns, audio acoustic features, and
+            fused timeline outputs generated for interviewer review.
           </p>
         </div>
 
@@ -416,7 +775,9 @@ function CandidateSessionCard({ candidate, session }) {
 }
 
 function AnalysisInfoCard({ analysis }) {
-  const metadata = analysis.metadata || {};
+  const fusionMetadata = analysis.metadataByType?.fusion || {};
+  const videoMetadata = analysis.metadataByType?.video || {};
+  const audioMetadata = analysis.metadataByType?.audio || {};
 
   return (
     <section className="rounded-2xl border border-gray-200 bg-white p-6">
@@ -428,7 +789,7 @@ function AnalysisInfoCard({ analysis }) {
         <div>
           <h2 className="text-lg font-bold text-gray-950">Analysis Details</h2>
           <p className="text-sm text-gray-500">
-            Processing metadata and stored result details
+            Multimodal processing metadata and stored result details
           </p>
         </div>
       </div>
@@ -442,23 +803,49 @@ function AnalysisInfoCard({ analysis }) {
               : "N/A"
           }
         />
-        <InfoRow label="Original FPS" value={metadata.original_fps ?? "N/A"} />
-        <InfoRow label="Target FPS" value={metadata.target_fps ?? "N/A"} />
+
         <InfoRow
-          label="Duration"
+          label="Fusion Method"
+          value={fusionMetadata.fusion_method || "Weighted late fusion"}
+        />
+
+        <InfoRow
+          label="Decision Score"
+          value={fusionMetadata.decision_score || "raw_fusion_score"}
+        />
+
+        <InfoRow
+          label="Display Score"
+          value={fusionMetadata.display_score || "smoothed_fusion_score"}
+        />
+
+        <InfoRow
+          label="Video Timeline Items"
           value={
-            metadata.duration_seconds
-              ? `${Number(metadata.duration_seconds).toFixed(2)}s`
-              : "N/A"
+            fusionMetadata.video_timeline_items ??
+            analysis.timelines?.video?.length ??
+            "N/A"
           }
         />
+
         <InfoRow
-          label="Sampled Frames"
-          value={metadata.sampled_frames ?? "N/A"}
+          label="Audio Timeline Items"
+          value={
+            fusionMetadata.audio_timeline_items ??
+            analysis.timelines?.audio?.length ??
+            "N/A"
+          }
         />
+
         <InfoRow
-          label="Valid Landmark Frames"
-          value={metadata.valid_landmark_frames ?? "N/A"}
+          label="Video Duration"
+          value={
+            videoMetadata.duration_seconds
+              ? `${Number(videoMetadata.duration_seconds).toFixed(2)}s`
+              : audioMetadata.duration_seconds
+                ? `${Number(audioMetadata.duration_seconds).toFixed(2)}s`
+                : "N/A"
+          }
         />
       </div>
     </section>
@@ -506,4 +893,47 @@ function InfoRow({ label, value }) {
       </span>
     </div>
   );
+}
+
+function ModalityScoreCard({ label, description, score, risk }) {
+  return (
+    <div className="rounded-2xl border border-gray-200 bg-white p-5">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-sm font-semibold text-gray-950">{label}</p>
+          <p className="mt-1 text-xs text-gray-500">{description}</p>
+        </div>
+
+        <RiskBadge risk={risk || "low"} />
+      </div>
+
+      <p className="mt-5 text-3xl font-bold text-gray-950">
+        {Number(score || 0).toFixed(2)}
+      </p>
+
+      <p className="mt-1 text-xs text-gray-500">Overall model score</p>
+    </div>
+  );
+}
+
+function getSegmentVideoScore(segment) {
+  const score =
+    segment.raw_video_score ??
+    segment.display_video_score ??
+    segment.video_score ??
+    segment.explanation?.video_score ??
+    null;
+
+  return score !== null && score !== undefined ? score : null;
+}
+
+function getSegmentAudioScore(segment) {
+  const score =
+    segment.raw_audio_score ??
+    segment.display_audio_score ??
+    segment.audio_score ??
+    segment.explanation?.audio_score ??
+    null;
+
+  return score !== null && score !== undefined ? score : null;
 }

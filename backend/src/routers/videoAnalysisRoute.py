@@ -57,7 +57,7 @@ async def analyze_video(
 
 @router.get("/history/all")
 def get_video_analysis_history(
-    request: Request,
+    # request: Request,
     db: Session = Depends(get_db)
 ):
     """
@@ -66,49 +66,10 @@ def get_video_analysis_history(
 
     analyses = get_all_video_analyses(db=db)
 
-    history = []
-
-    for analysis in analyses:
-        video_url = None
-        video_file_exists = False
-
-        if analysis.uploaded_file_path:
-            video_path = Path(analysis.uploaded_file_path)
-            video_file_exists = video_path.exists()
-
-            if video_file_exists:
-                filename = video_path.name
-                video_url = str(request.base_url) + f"uploads/{filename}"
-
-        timeline = analysis.timeline_json or []
-        high_risk_count = len([
-            item for item in timeline
-            if item.get("risk") == "high"
-        ])
-        medium_risk_count = len([
-            item for item in timeline
-            if item.get("risk") == "medium"
-        ])
-
-        history.append({
-            "analysis_id": analysis.id,
-            "session_id": analysis.session_id,
-            "video_name": analysis.video_name,
-            "uploaded_file_path": analysis.uploaded_file_path,
-            "video_url": video_url,
-            "video_file_exists": video_file_exists,
-            "overall_score": analysis.overall_score,
-            "overall_risk": analysis.overall_risk,
-            "segment_count": len(timeline),
-            "high_risk_count": high_risk_count,
-            "medium_risk_count": medium_risk_count,
-            "created_at": analysis.created_at
-        })
-
     return {
         "success": True,
-        "count": len(history),
-        "data": history
+        "count": len(analyses),
+        "data": analyses
     }
 
 
@@ -133,27 +94,31 @@ def get_video_analysis(
             detail="Video analysis result not found."
         )
     
-    video_url = None
+    # video_url = None
 
-    if analysis.uploaded_file_path:
-        video_path = Path(analysis.uploaded_file_path)
+    # if analysis.uploaded_file_path:
+    #     video_path = Path(analysis.uploaded_file_path)
 
-        if video_path.exists():
-            filename = video_path.name
-            video_url = str(request.base_url) + f"uploads/{filename}"
+    #     if video_path.exists():
+    #         filename = video_path.name
+    #         video_url = str(request.base_url) + f"uploads/{filename}"
 
+    # return {
+    #     "success": True,
+    #     "data": {
+    #         "analysis_id": analysis.id,
+    #         "session_id": analysis.session_id,
+    #         "video_name": analysis.video_name,
+    #         "uploaded_file_path": analysis.uploaded_file_path,
+    #         "video_url": video_url,
+    #         "overall_score": analysis.overall_score,
+    #         "overall_risk": analysis.overall_risk,
+    #         "metadata": analysis.metadata_json,
+    #         "timeline": analysis.timeline_json,
+    #         "created_at": analysis.created_at
+    #     }
+    # }
     return {
         "success": True,
-        "data": {
-            "analysis_id": analysis.id,
-            "session_id": analysis.session_id,
-            "video_name": analysis.video_name,
-            "uploaded_file_path": analysis.uploaded_file_path,
-            "video_url": video_url,
-            "overall_score": analysis.overall_score,
-            "overall_risk": analysis.overall_risk,
-            "metadata": analysis.metadata_json,
-            "timeline": analysis.timeline_json,
-            "created_at": analysis.created_at
-        }
+        "data": analysis
     }
