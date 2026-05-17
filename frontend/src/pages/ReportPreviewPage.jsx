@@ -11,7 +11,8 @@ import {
 } from "lucide-react";
 
 import { getVideoAnalysisById } from "../services/videoAnalysisApi";
-import { getCandidateById, getSessions } from "../services/localDataService";
+import { getSessions } from "../services/sessionApi";
+import { getCandidates } from "../services/candidateApi";
 
 import RiskBadge from "../components/RiskBadge";
 
@@ -307,21 +308,31 @@ export default function ReportPreviewPage() {
       const loadedAnalysis = normalizeReportAnalysis(response.data);
       setAnalysis(loadedAnalysis);
 
-      const sessions = getSessions();
+      const [sessionsResponse, candidatesResponse] = await Promise.all([
+        getSessions(),
+        getCandidates(),
+      ]);
+
+      const sessions = sessionsResponse.data || [];
+      const candidates = candidatesResponse || [];
 
       const matchingSession = sessions.find(
         (session) =>
-          String(session.linkedAnalysisId) ===
-          String(loadedAnalysis.analysis_id),
+          String(session.linked_analysis_id) ===
+            String(loadedAnalysis.analysis_id) ||
+          String(session.session_id) === String(loadedAnalysis.session_id),
       );
 
       if (matchingSession) {
         setLinkedSession(matchingSession);
 
-        if (matchingSession.candidateId) {
-          const candidate = getCandidateById(matchingSession.candidateId);
-          setLinkedCandidate(candidate || null);
-        }
+        const candidate = candidates.find(
+          (candidateItem) =>
+            String(candidateItem.candidate_id) ===
+            String(matchingSession.candidate_id),
+        );
+
+        setLinkedCandidate(candidate || null);
       }
     } catch (error) {
       console.error(error);
@@ -673,7 +684,7 @@ export default function ReportPreviewPage() {
             <h2 className="text-lg font-bold text-gray-950">Reviewer Notes</h2>
 
             <p className="mt-2 text-sm leading-6 text-gray-600">
-              {linkedSession?.meetingNotes ||
+              {linkedSession?.meeting_notes ||
                 "No reviewer notes were attached to this analysis."}
             </p>
           </section>
@@ -751,23 +762,50 @@ function CandidateSessionCard({ candidate, session }) {
           <h2 className="text-lg font-bold text-gray-950">
             Candidate & Session Details
           </h2>
-          <p className="text-sm text-gray-500">Linked local workflow data</p>
+          <p className="text-sm text-gray-500">
+            Linked interview workflow data
+          </p>
         </div>
       </div>
 
       <div className="mt-5 space-y-3 text-sm">
         <InfoRow
           label="Candidate"
-          value={candidate?.name || session?.candidateName || "N/A"}
+          value={candidate?.name || session?.candidate_name || "N/A"}
         />
+
         <InfoRow label="Email" value={candidate?.email || "N/A"} />
+
         <InfoRow label="Position" value={candidate?.position || "N/A"} />
+
         <InfoRow label="Interview Stage" value={session?.stage || "N/A"} />
-        <InfoRow label="Session Date" value={session?.date || "N/A"} />
-        <InfoRow label="Session Time" value={session?.time || "N/A"} />
+
+        <InfoRow label="Session Date" value={session?.session_date || "N/A"} />
+
+        <InfoRow label="Session Time" value={session?.session_time || "N/A"} />
+
         <InfoRow
           label="Consent Status"
-          value={session?.consentStatus || "N/A"}
+          value={session?.consent_status || "N/A"}
+        />
+
+        <InfoRow
+          label="Session Status"
+          value={session?.session_status || "N/A"}
+        />
+
+        <InfoRow
+          label="Analysis Status"
+          value={session?.analysis_status || "N/A"}
+        />
+
+        <InfoRow
+          label="Linked Analysis"
+          value={
+            session?.linked_analysis_id
+              ? `#${session.linked_analysis_id}`
+              : "N/A"
+          }
         />
       </div>
     </section>
