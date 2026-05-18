@@ -1,0 +1,41 @@
+video_id,video_path,true_label,true_label_name,error,traceback
+trial_truth_052,d:\NSBM\3rd Year\Final Year Project\Product Development\Github\Mutimodal-Deception-Dectection\Demos\Real Life Trial Data (Demo 5)\Dataset\Real-life_Deception_Detection_2016\Clips\Truthful\trial_truth_052.mp4,0,truthful,"Video has only 15 valid frames, but window size is 25.","Traceback (most recent call last):
+  File ""C:\Users\brian\AppData\Local\Temp\ipykernel_14876\645599250.py"", line 16, in <module>
+    video_result = predict_video_timeline(video_path)
+  File ""d:\NSBM\3rd Year\Final Year Project\Product Development\Github\Mutimodal-Deception-Dectection\backend\ml\video\predict_timeline.py"", line 84, in predict_video_timeline
+    X_infer, window_info = create_inference_windows(
+                           ~~~~~~~~~~~~~~~~~~~~~~~~^
+        sequence=sequence,
+        ^^^^^^^^^^^^^^^^^^
+        window_size=window_size,
+        ^^^^^^^^^^^^^^^^^^^^^^^^
+        stride=stride
+        ^^^^^^^^^^^^^
+    )
+    ^
+  File ""d:\NSBM\3rd Year\Final Year Project\Product Development\Github\Mutimodal-Deception-Dectection\backend\ml\video\windowing.py"", line 23, in create_inference_windows
+    raise ValueError(
+    ...<2 lines>...
+    )
+ValueError: Video has only 15 valid frames, but window size is 25.
+"
+trial_lie_051,d:\NSBM\3rd Year\Final Year Project\Product Development\Github\Mutimodal-Deception-Dectection\Demos\Real Life Trial Data (Demo 5)\Dataset\Real-life_Deception_Detection_2016\Clips\Deceptive\trial_lie_051.mp4,1,deceptive,"Video has only 17 valid frames, but window size is 25.","Traceback (most recent call last):
+  File ""C:\Users\brian\AppData\Local\Temp\ipykernel_14876\645599250.py"", line 16, in <module>
+    video_result = predict_video_timeline(video_path)
+  File ""d:\NSBM\3rd Year\Final Year Project\Product Development\Github\Mutimodal-Deception-Dectection\backend\ml\video\predict_timeline.py"", line 84, in predict_video_timeline
+    X_infer, window_info = create_inference_windows(
+                           ~~~~~~~~~~~~~~~~~~~~~~~~^
+        sequence=sequence,
+        ^^^^^^^^^^^^^^^^^^
+        window_size=window_size,
+        ^^^^^^^^^^^^^^^^^^^^^^^^
+        stride=stride
+        ^^^^^^^^^^^^^
+    )
+    ^
+  File ""d:\NSBM\3rd Year\Final Year Project\Product Development\Github\Mutimodal-Deception-Dectection\backend\ml\video\windowing.py"", line 23, in create_inference_windows
+    raise ValueError(
+    ...<2 lines>...
+    )
+ValueError: Video has only 17 valid frames, but window size is 25.
+"

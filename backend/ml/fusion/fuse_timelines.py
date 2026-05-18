@@ -1,8 +1,8 @@
 from typing import Dict, List, Any
 
 
-DEFAULT_VIDEO_WEIGHT = 0.6
-DEFAULT_AUDIO_WEIGHT = 0.4
+DEFAULT_VIDEO_WEIGHT = 0.2
+DEFAULT_AUDIO_WEIGHT = 0.8
 
 
 def classify_fusion_risk(score: float) -> str:
