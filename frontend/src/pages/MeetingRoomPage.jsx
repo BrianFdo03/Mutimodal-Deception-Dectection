@@ -3,12 +3,9 @@ import { useNavigate, useParams } from "react-router-dom";
 import {
   AlertTriangle,
   CalendarDays,
-  Camera,
   CheckCircle2,
   ClipboardList,
   Loader2,
-  Mic,
-  MonitorUp,
   PhoneOff,
   PlayCircle,
   Square,
@@ -38,7 +35,6 @@ export default function MeetingRoomPage() {
   const [meetingEnded, setMeetingEnded] = useState(false);
   const [interviewNotes, setInterviewNotes] = useState("");
 
-  const [cameraReady, setCameraReady] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [recordedBlob, setRecordedBlob] = useState(null);
   const [recordedVideoUrl, setRecordedVideoUrl] = useState("");
@@ -111,37 +107,11 @@ export default function MeetingRoomPage() {
     }
   }
 
-  async function requestCameraAccess() {
-    try {
-      setErrorMessage("");
-
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: true,
-      });
-
-      streamRef.current = stream;
-
-      if (localVideoRef.current) {
-        localVideoRef.current.srcObject = stream;
-      }
-
-      setCameraReady(true);
-    } catch (error) {
-      console.error(error);
-      setErrorMessage(
-        "Camera or microphone access was denied. Please allow permissions and try again.",
-      );
-    }
-  }
-
   function stopCameraStream() {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
     }
-
-    setCameraReady(false);
   }
 
   function getSupportedMimeType() {
@@ -196,45 +166,110 @@ export default function MeetingRoomPage() {
   //   }));
   // }
 
-  function startRecording() {
-    if (!streamRef.current) {
-      setErrorMessage("Please enable camera and microphone before recording.");
-      return;
-    }
+  async function startRecording() {
+    try {
+      setErrorMessage("");
 
-    recordedChunksRef.current = [];
-    setRecordedBlob(null);
-    setRecordedVideoUrl("");
+      let stream = streamRef.current;
 
-    const mimeType = getSupportedMimeType();
+      if (!stream) {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: true,
+        });
 
-    const recorderOptions = mimeType ? { mimeType } : undefined;
+        streamRef.current = stream;
 
-    const mediaRecorder = new MediaRecorder(streamRef.current, recorderOptions);
-
-    mediaRecorderRef.current = mediaRecorder;
-
-    mediaRecorder.ondataavailable = (event) => {
-      if (event.data && event.data.size > 0) {
-        recordedChunksRef.current.push(event.data);
+        if (localVideoRef.current) {
+          localVideoRef.current.srcObject = stream;
+        }
       }
-    };
 
-    mediaRecorder.onstop = () => {
-      const blob = new Blob(recordedChunksRef.current, {
-        type: mimeType || "video/webm",
-      });
+      recordedChunksRef.current = [];
+      setRecordedBlob(null);
 
-      const videoUrl = URL.createObjectURL(blob);
+      if (recordedVideoUrl) {
+        URL.revokeObjectURL(recordedVideoUrl);
+      }
 
-      setRecordedBlob(blob);
-      setRecordedVideoUrl(videoUrl);
+      setRecordedVideoUrl("");
+
+      const mimeType = getSupportedMimeType();
+      const recorderOptions = mimeType ? { mimeType } : undefined;
+
+      const mediaRecorder = new MediaRecorder(stream, recorderOptions);
+
+      mediaRecorderRef.current = mediaRecorder;
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data && event.data.size > 0) {
+          recordedChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(recordedChunksRef.current, {
+          type: mimeType || "video/webm",
+        });
+
+        const videoUrl = URL.createObjectURL(blob);
+
+        setRecordedBlob(blob);
+        setRecordedVideoUrl(videoUrl);
+        setIsRecording(false);
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+    } catch (error) {
+      console.error(error);
+
+      setErrorMessage(
+        "Camera or microphone access was denied. Please allow permissions and try recording again.",
+      );
+
       setIsRecording(false);
-    };
-
-    mediaRecorder.start();
-    setIsRecording(true);
+    }
   }
+  // function startRecording() {
+  //   if (!streamRef.current) {
+  //     setErrorMessage("Please enable camera and microphone before recording.");
+  //     return;
+  //   }
+
+  //   recordedChunksRef.current = [];
+  //   setRecordedBlob(null);
+  //   setRecordedVideoUrl("");
+
+  //   const mimeType = getSupportedMimeType();
+
+  //   const recorderOptions = mimeType ? { mimeType } : undefined;
+
+  //   const mediaRecorder = new MediaRecorder(streamRef.current, recorderOptions);
+
+  //   mediaRecorderRef.current = mediaRecorder;
+
+  //   mediaRecorder.ondataavailable = (event) => {
+  //     if (event.data && event.data.size > 0) {
+  //       recordedChunksRef.current.push(event.data);
+  //     }
+  //   };
+
+  //   mediaRecorder.onstop = () => {
+  //     const blob = new Blob(recordedChunksRef.current, {
+  //       type: mimeType || "video/webm",
+  //     });
+
+  //     const videoUrl = URL.createObjectURL(blob);
+
+  //     setRecordedBlob(blob);
+  //     setRecordedVideoUrl(videoUrl);
+  //     setIsRecording(false);
+  //   };
+
+  //   mediaRecorder.start();
+  //   setIsRecording(true);
+  // }
 
   function stopRecording() {
     if (!mediaRecorderRef.current) {
@@ -288,9 +323,10 @@ export default function MeetingRoomPage() {
     try {
       setErrorMessage("");
 
-      const analysisStatus = recordedBlob
-        ? "Ready for Analysis"
-        : "Recording Required";
+      const analysisStatus =
+        recordedBlob || recordedChunksRef.current.length > 0
+          ? "Ready for Analysis"
+          : "Recording Required";
 
       await updateSession(sessionId, {
         session_status: "Completed",
@@ -463,13 +499,6 @@ export default function MeetingRoomPage() {
           >
             Back to Sessions
           </button>
-
-          <button
-            onClick={() => navigate("/analyze-video")}
-            className="rounded-xl border border-gray-300 bg-white px-5 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50"
-          >
-            Manual Upload
-          </button>
         </div>
       </div>
 
@@ -557,25 +586,10 @@ export default function MeetingRoomPage() {
             />
 
             <div className="mt-6 flex flex-wrap justify-center gap-3">
-              {!cameraReady && (
-                <button
-                  onClick={requestCameraAccess}
-                  className="inline-flex items-center gap-2 rounded-xl bg-gray-950 px-5 py-3 text-sm font-semibold text-white hover:bg-gray-800"
-                >
-                  <Camera size={18} />
-                  Enable Camera
-                </button>
-              )}
-
               {!meetingStarted && !meetingEnded && (
                 <button
                   onClick={startMeeting}
-                  disabled={!cameraReady}
-                  className={`inline-flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold ${
-                    cameraReady
-                      ? "bg-green-700 text-white hover:bg-green-800"
-                      : "bg-gray-300 text-gray-600 cursor-not-allowed"
-                  }`}
+                  className="inline-flex items-center gap-2 rounded-xl bg-green-700 px-5 py-3 text-sm font-semibold text-white hover:bg-green-800"
                 >
                   <PlayCircle size={18} />
                   Start Interview
@@ -585,12 +599,7 @@ export default function MeetingRoomPage() {
               {!isRecording && meetingStarted && !meetingEnded && (
                 <button
                   onClick={startRecording}
-                  disabled={!cameraReady}
-                  className={`inline-flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold ${
-                    cameraReady
-                      ? "bg-blue-700 text-white hover:bg-blue-800"
-                      : "bg-gray-300 text-gray-600 cursor-not-allowed"
-                  }`}
+                  className="inline-flex items-center gap-2 rounded-xl bg-blue-700 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-800"
                 >
                   <Video size={18} />
                   Start Recording
@@ -606,18 +615,6 @@ export default function MeetingRoomPage() {
                   Stop Recording
                 </button>
               )}
-
-              <MeetingButton
-                icon={Mic}
-                label="Mute"
-                disabled={!meetingStarted || meetingEnded}
-              />
-
-              <MeetingButton
-                icon={MonitorUp}
-                label="Share"
-                disabled={!meetingStarted || meetingEnded}
-              />
 
               {!meetingEnded && (
                 <button
@@ -729,8 +726,6 @@ export default function MeetingRoomPage() {
               </div>
             </div>
           </div>
-
-          <InterviewGuide />
         </div>
 
         <div className="space-y-6">
@@ -851,101 +846,6 @@ function ConsentRequiredView({ session, navigate }) {
   );
 }
 
-function LiveCandidatePanel({
-  title,
-  subtitle,
-  initials,
-  localVideoRef,
-  cameraReady,
-  isActive,
-}) {
-  return (
-    <div className="overflow-hidden rounded-2xl bg-gray-950">
-      <div className="relative flex h-80 items-center justify-center">
-        {cameraReady ? (
-          <video
-            ref={localVideoRef}
-            autoPlay
-            muted
-            playsInline
-            className="h-full w-full object-cover"
-          />
-        ) : (
-          <div className="text-center">
-            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-white text-2xl font-bold text-gray-950">
-              {initials}
-            </div>
-
-            <p className="mt-4 font-semibold text-white">{title}</p>
-            <p className="text-sm text-gray-400">{subtitle}</p>
-          </div>
-        )}
-
-        <div className="absolute left-4 top-4">
-          {isActive ? (
-            <span className="rounded-full bg-green-500 px-3 py-1 text-xs font-semibold text-white">
-              Live
-            </span>
-          ) : (
-            <span className="rounded-full bg-gray-700 px-3 py-1 text-xs font-semibold text-gray-200">
-              Waiting
-            </span>
-          )}
-        </div>
-
-        <div className="absolute bottom-4 left-4 rounded-full bg-black/60 px-3 py-1 text-xs font-semibold text-white">
-          {title}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function InterviewerPanel({ title, subtitle, initials, isActive }) {
-  return (
-    <div className="overflow-hidden rounded-2xl bg-gray-950">
-      <div className="relative flex h-80 items-center justify-center">
-        <div className="text-center">
-          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-white text-2xl font-bold text-gray-950">
-            {initials}
-          </div>
-
-          <p className="mt-4 font-semibold text-white">{title}</p>
-          <p className="text-sm text-gray-400">{subtitle}</p>
-        </div>
-
-        <div className="absolute left-4 top-4">
-          {isActive ? (
-            <span className="rounded-full bg-green-500 px-3 py-1 text-xs font-semibold text-white">
-              Live
-            </span>
-          ) : (
-            <span className="rounded-full bg-gray-700 px-3 py-1 text-xs font-semibold text-gray-200">
-              Waiting
-            </span>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function MeetingButton({ icon: Icon, label, disabled }) {
-  return (
-    <button
-      disabled={disabled}
-      className={`inline-flex items-center gap-2 rounded-xl border px-5 py-3 text-sm font-semibold ${
-        disabled
-          ? "border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed"
-          : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
-      }`}
-    >
-      <Icon size={18} />
-      {label}
-    </button>
-  );
-}
-
 function SessionInfoCard({ session }) {
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
@@ -983,39 +883,6 @@ function SessionInfoCard({ session }) {
   );
 }
 
-function InterviewGuide() {
-  const questions = [
-    "Can you briefly introduce yourself and your background?",
-    "Can you explain a project where you solved a difficult technical problem?",
-    "What specific responsibilities did you handle in your previous role?",
-    "Can you describe a situation where you worked under pressure?",
-    "Is there anything in your resume you would like to clarify?",
-  ];
-
-  return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-      <h2 className="text-lg font-semibold text-gray-950">Interview Guide</h2>
-      <p className="mt-1 text-sm text-gray-500">
-        Suggested questions for the interviewer during the session.
-      </p>
-
-      <div className="mt-5 space-y-3">
-        {questions.map((question, index) => (
-          <div
-            key={question}
-            className="rounded-xl border border-gray-200 bg-gray-50 p-4"
-          >
-            <p className="text-sm font-semibold text-gray-500">
-              Question {index + 1}
-            </p>
-            <p className="mt-1 text-sm text-gray-800">{question}</p>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 function InfoRow({ label, value }) {
   return (
     <div className="flex justify-between gap-4 border-b border-gray-100 pb-2">
@@ -1025,14 +892,4 @@ function InfoRow({ label, value }) {
       </span>
     </div>
   );
-}
-
-function getInitials(name = "") {
-  return name
-    .split(" ")
-    .filter(Boolean)
-    .map((part) => part[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
 }

@@ -1,0 +1,4 @@
+model,accuracy,precision,recall,f1,roc_auc
+Video BiLSTM,0.6471,1.0,0.3333,0.5,0.5139
+Audio BiLSTM,0.8824,1.0,0.7778,0.875,0.9722
+Weighted Fusion (0.6/0.4),0.8235,1.0,0.6667,0.8,0.9306

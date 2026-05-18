@@ -10,14 +10,6 @@ import {
   X,
 } from "lucide-react";
 
-// import {
-//   deleteSession,
-//   getCandidates,
-//   getSessions,
-//   saveSession,
-//   updateSession,
-// } from "../services/localDataService";
-
 import { getCandidates } from "../services/candidateApi";
 import {
   createSession,
@@ -38,11 +30,6 @@ export default function SessionsPage() {
   useEffect(() => {
     loadPageData();
   }, []);
-
-  // function loadPageData() {
-  //   setSessions(getSessions());
-  //   setCandidates(getCandidates());
-  // }
 
   async function loadPageData() {
     try {
@@ -117,18 +104,6 @@ export default function SessionsPage() {
       );
     }
   }
-  // async function handleDeleteSession(sessionId) {
-  //   const confirmed = window.confirm(
-  //     "Are you sure you want to delete this interview session?",
-  //   );
-
-  //   if (!confirmed) {
-  //     return;
-  //   }
-
-  //   const updatedSessions = deleteSessionById(sessionId);
-  //   setSessions(updatedSessions);
-  // }
 
   async function copyToClipboard(text, label) {
     try {
@@ -256,7 +231,10 @@ export default function SessionsPage() {
                   <th className="px-6 py-3">Consent</th>
                   <th className="px-6 py-3">Status</th>
                   <th className="px-6 py-3">Analysis</th>
-                  <th className="px-6 py-3 min-w-[300px]">Actions</th>
+                  <th className="px-4 py-3 min-w-[220px] text-center">
+                    Actions
+                  </th>
+                  {/* <th className="px-6 py-3 min-w-[300px]">Actions</th> */}
                 </tr>
               </thead>
 
@@ -317,17 +295,18 @@ export default function SessionsPage() {
                       />
                     </td>
 
-                    <td className="px-6 py-4">
-                      <div className="flex min-w-[280px] flex-col gap-2">
+                    <td className="py-4 pl-3 pr-4 text-right">
+                      <div className="ml-auto flex max-w-[230px] flex-col gap-2">
                         {/* Primary workflow actions */}
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex flex-wrap justify-normal gap-1.5">
                           <button
+                            className=""
                             onClick={() =>
                               navigate(`/meeting/${session.session_id}`)
                             }
                             className={getActionButtonClass("primary")}
                           >
-                            <MonitorPlay size={14} />
+                            <MonitorPlay size={13} />
                             Meeting
                           </button>
 
@@ -338,7 +317,7 @@ export default function SessionsPage() {
                               }
                               className={getActionButtonClass("success")}
                             >
-                              <CheckCircle2 size={14} />
+                              <CheckCircle2 size={13} />
                               Consent
                             </button>
                           ) : (
@@ -348,14 +327,14 @@ export default function SessionsPage() {
                               }
                               className={getActionButtonClass("default")}
                             >
-                              <CheckCircle2 size={14} />
-                              View Consent
+                              <CheckCircle2 size={13} />
+                              Consent
                             </button>
                           )}
                         </div>
 
-                        {/* Secondary actions */}
-                        <div className="flex flex-wrap gap-2">
+                        {/* Link sharing actions */}
+                        <div className="flex flex-wrap justify-normal gap-1.5">
                           {session.candidate_consent_url && (
                             <button
                               onClick={() =>
@@ -383,31 +362,21 @@ export default function SessionsPage() {
                               Copy Meeting
                             </button>
                           )}
+                        </div>
 
+                        {/* Result and destructive actions */}
+                        <div className="flex flex-wrap justify-normal gap-1.5">
                           {session.linked_analysis_id && (
-                            <>
-                              <button
-                                onClick={() =>
-                                  navigate(
-                                    `/saved-analysis?id=${session.linked_analysis_id}`,
-                                  )
-                                }
-                                className={getActionButtonClass("success")}
-                              >
-                                Open Analysis
-                              </button>
-
-                              <button
-                                onClick={() =>
-                                  navigate(
-                                    `/report/${session.linked_analysis_id}`,
-                                  )
-                                }
-                                className={getActionButtonClass("info")}
-                              >
-                                Report
-                              </button>
-                            </>
+                            <button
+                              onClick={() =>
+                                navigate(
+                                  `/saved-analysis?id=${session.linked_analysis_id}`,
+                                )
+                              }
+                              className={getActionButtonClass("success")}
+                            >
+                              Open Analysis
+                            </button>
                           )}
 
                           <button
@@ -416,7 +385,7 @@ export default function SessionsPage() {
                             }
                             className={getActionButtonClass("danger")}
                           >
-                            <Trash2 size={14} />
+                            <Trash2 size={13} />
                             Delete
                           </button>
                         </div>
