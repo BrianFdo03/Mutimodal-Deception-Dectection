@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime, JSON, Text
+from sqlalchemy import Column, Integer, String, Float, DateTime, JSON, Text, ForeignKey
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
@@ -8,24 +8,6 @@ from backend.src.core.databaseCore import Base
 
 class VideoAnalysis(Base):
     __tablename__ = "video_analyses"
-
-    # id = Column(Integer, primary_key=True, index=True)
-
-    # # Later you can connect this to Session table using ForeignKey.
-    # # For now, keep it nullable so we can test video analysis independently.
-    # # session_id = Column(Integer, nullable=True)
-
-    # video_name = Column(String, nullable=False)
-    # uploaded_file_path = Column(String, nullable=True)
-
-    # overall_score = Column(Float, nullable=False)
-    # overall_risk = Column(String, nullable=False)
-
-    # metadata_json = Column(JSON, nullable=True)
-    # timeline_json = Column(JSON, nullable=False)
-
-    # created_at = Column(DateTime(timezone=True), server_default=func.now())
-
 
     id = Column(Integer, primary_key=True, index=True)
 
@@ -39,7 +21,11 @@ class VideoAnalysis(Base):
 
     # # Later you can connect this to Session table using ForeignKey.
     # # For now, keep it nullable so we can test video analysis independently.
-    session_id = Column(Integer, nullable=True)
+    session_id = Column(
+        Integer,
+        ForeignKey("interview_sessions.session_id", ondelete="SET NULL"),
+        nullable=True,
+    )
     video_name = Column(String, nullable=False)
     overall_score = Column(Float, nullable=True)
     overall_risk = Column(String(50), nullable=True)
@@ -69,3 +55,9 @@ class VideoAnalysis(Base):
     analysis_result_json = Column(JSONB, nullable=True)
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    session = relationship(
+        "InterviewSession",
+        back_populates="analyses",
+        foreign_keys=[session_id],
+    )
